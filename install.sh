@@ -2,7 +2,7 @@
 # Install shtick from GitHub into its own virtual environment and put the `shtick` command on your PATH.
 #
 #   curl -fsSL https://raw.githubusercontent.com/arthurdaquinosilva/shtick/main/install.sh | sh
-#   curl -fsSL .../install.sh | sh -s -- 0.1.1         # a specific version
+#   curl -fsSL .../install.sh | sh -s -- 0.2.0         # a specific version
 #   curl -fsSL .../install.sh | sh -s -- --uninstall   # remove it again
 #
 # Running it again upgrades to the latest code on main. Settings (environment variables):
@@ -94,7 +94,7 @@ Install shtick, a playground for writing and testing shell scripts.
 
 usage: install.sh [VERSION | main] [--uninstall]
 
-  VERSION        install this release (e.g. 0.1.1); default: the main branch
+  VERSION        install this release (e.g. 0.2.0); default: the main branch
   --uninstall    remove shtick's virtual environment and the `shtick` link
 
 Environment: SHTICK_VENV, SHTICK_BIN_DIR, SHTICK_PYTHON, SHTICK_PACKAGE (see the top of this script).

@@ -38,7 +38,7 @@ The name: **sh** + **tick** (✓, a passing check) — and a *shtick* is a routi
 curl -fsSL https://raw.githubusercontent.com/arthurdaquinosilva/shtick/main/install.sh | sh
 ```
 
-The script downloads shtick from GitHub into its own virtual environment (`~/.local/share/shtick/venv`) and links the `shtick` command into `~/.local/bin`, telling you if that isn't on your `PATH`. Run it again to upgrade to the latest code on `main`; add `-s -- 0.1.1` after `sh` for a specific release, or `-s -- --uninstall` to remove it (your config and history stay). [Read it first](https://github.com/arthurdaquinosilva/shtick/blob/main/install.sh) if you like — it's short.
+The script downloads shtick from GitHub into its own virtual environment (`~/.local/share/shtick/venv`) and links the `shtick` command into `~/.local/bin`, telling you if that isn't on your `PATH`. Run it again to upgrade to the latest code on `main`; add `-s -- 0.2.0` after `sh` for a specific release, or `-s -- --uninstall` to remove it (your config and history stay). [Read it first](https://github.com/arthurdaquinosilva/shtick/blob/main/install.sh) if you like — it's short.
 
 shtick isn't on PyPI; GitHub is the only place it's published. Then run `shtick`. Requires Python 3.10+ on macOS or Linux, and bash. [shellcheck](https://www.shellcheck.net) is optional but recommended (`brew install shellcheck`, `apt install shellcheck`); dash and zsh are used when installed.
 
