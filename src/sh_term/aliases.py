@@ -14,7 +14,7 @@ import subprocess
 import tempfile
 from dataclasses import dataclass
 
-from shtick.engine import Session, shell_kind
+from sh_term.engine import Session, shell_kind
 
 TIMEOUT = 15  # seconds for the interactive shell to load its startup files
 
@@ -22,11 +22,11 @@ TIMEOUT = 15  # seconds for the interactive shell to load its startup files
 # bash's `alias -p` only uses single quotes, which shlex reads; zsh's also uses $'…', so zsh lists
 # kind, name and value separated by NULs.
 LIST = {
-    "bash": 'alias -p >"$SHTICK_ALIAS_OUT"',
+    "bash": 'alias -p >"$SH_TERM_ALIAS_OUT"',
     "zsh": (
         '{ for k v in "${(@kv)aliases}"; do printf "\\0%s\\0%s\\0" "$k" "$v"; done; '
         'for k v in "${(@kv)galiases}"; do printf "global\\0%s\\0%s\\0" "$k" "$v"; done; '
-        'for k v in "${(@kv)saliases}"; do printf "suffix\\0%s\\0%s\\0" "$k" "$v"; done; } >"$SHTICK_ALIAS_OUT"'
+        'for k v in "${(@kv)saliases}"; do printf "suffix\\0%s\\0%s\\0" "$k" "$v"; done; } >"$SH_TERM_ALIAS_OUT"'
     ),
 }
 
@@ -81,7 +81,7 @@ _cache: dict[str, list[Alias] | AliasError] = {}  # failures too, so a restart d
 
 
 def load(setting: str, refresh: bool = False) -> list[Alias]:
-    """Ask the interactive shell for its aliases, once per shtick process (unless `refresh`)."""
+    """Ask the interactive shell for its aliases, once per :sh process (unless `refresh`)."""
     path = source_shell(setting)
     if path not in _cache or refresh:
         try:
@@ -96,13 +96,13 @@ def load(setting: str, refresh: bool = False) -> list[Alias]:
 
 def _list(path: str) -> str:
     kind = shell_kind(path)
-    fd, out = tempfile.mkstemp(prefix="shtick-aliases-")
+    fd, out = tempfile.mkstemp(prefix="sh-term-aliases-")
     os.close(fd)
     try:
         try:
             proc = subprocess.run(
                 [path, "-ic", LIST[kind]], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL, env={**os.environ, "SHTICK_ALIAS_OUT": out}, timeout=TIMEOUT,
+                stderr=subprocess.DEVNULL, env={**os.environ, "SH_TERM_ALIAS_OUT": out}, timeout=TIMEOUT,
                 start_new_session=True,  # keep an interactive shell's job control off our terminal
             )
         except subprocess.TimeoutExpired:
@@ -167,7 +167,7 @@ def define(session: Session, aliases: list[Alias]) -> list[Alias]:
         if not check:
             break
         listing = session.query(
-            f'for __shtick_w in {check}; do command -v -- "$__shtick_w" >/dev/null 2>&1 || printf \'%s\\n\' "$__shtick_w"; done; unset __shtick_w'
+            f'for __sh_term_w in {check}; do command -v -- "$__sh_term_w" >/dev/null 2>&1 || printf \'%s\\n\' "$__sh_term_w"; done; unset __sh_term_w'
         )
         missing = set(listing.stdout.splitlines())
         broken = [a for a in kept if words.get(a.name) in missing]

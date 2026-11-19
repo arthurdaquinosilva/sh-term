@@ -4,7 +4,7 @@ import time
 
 import pytest
 
-from shtick.engine import Session, ShellNotFound, shell_info
+from sh_term.engine import Session, ShellNotFound, shell_info
 
 
 def interrupt_later(session, delay):

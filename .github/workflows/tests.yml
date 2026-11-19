@@ -48,7 +48,7 @@ jobs:
       - name: Install with install.sh
         run: |
           export HOME="$RUNNER_TEMP/home" && mkdir -p "$HOME"
-          SHTICK_PACKAGE="$GITHUB_WORKSPACE" sh < install.sh
-          "$HOME/.local/bin/shtick" -c 'echo installed'
+          SH_TERM_PACKAGE="$GITHUB_WORKSPACE" sh < install.sh
+          "$HOME/.local/bin/:sh" -c 'echo installed'
           sh install.sh --uninstall
-          test ! -e "$HOME/.local/bin/shtick"
+          test ! -e "$HOME/.local/bin/:sh"

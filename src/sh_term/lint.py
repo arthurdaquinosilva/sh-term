@@ -82,7 +82,7 @@ class BackgroundLinter:
             self._requested = (text, kind, tuple(exclude))
             self._cond.notify()
         if self._thread is None:
-            self._thread = threading.Thread(target=self._run, name="shtick-lint", daemon=True)
+            self._thread = threading.Thread(target=self._run, name="sh-term-lint", daemon=True)
             self._thread.start()
 
     def current(self, text: str) -> Finding | None:

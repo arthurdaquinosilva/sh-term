@@ -27,20 +27,22 @@ def test_help_and_unknown_option(tmp_path):
 
 
 def test_uninstall_keeps_history_and_foreign_links(tmp_path):
-    data = tmp_path / ".local/share/shtick"
+    data = tmp_path / ".local/share/sh-term"
     (data / "venv/bin").mkdir(parents=True)
-    (data / "venv/bin/shtick").touch()
+    (data / "venv/bin/:sh").touch()
     (data / "history.sqlite").touch()
     bin_dir = tmp_path / ".local/bin"
     bin_dir.mkdir(parents=True)
-    (bin_dir / "shtick").symlink_to(data / "venv/bin/shtick")
+    (bin_dir / ":sh").symlink_to(data / "venv/bin/:sh")
+    (bin_dir / "sh-term").symlink_to(data / "venv/bin/sh-term")
 
     result = run("--uninstall", home=tmp_path)
     assert result.returncode == 0, result.stderr
-    assert not (data / "venv").exists() and not (bin_dir / "shtick").is_symlink()
+    assert not (data / "venv").exists() and not (bin_dir / ":sh").is_symlink()
+    assert not (bin_dir / "sh-term").is_symlink()
     assert (data / "history.sqlite").exists()
 
-    # A shtick installed some other way (pipx, brew…) is not ours to remove.
-    (bin_dir / "shtick").symlink_to("/somewhere/else/shtick")
+    # A :sh installed some other way (pipx, brew…) is not ours to remove.
+    (bin_dir / ":sh").symlink_to("/somewhere/else/:sh")
     run("--uninstall", home=tmp_path)
-    assert (bin_dir / "shtick").is_symlink()
+    assert (bin_dir / ":sh").is_symlink()

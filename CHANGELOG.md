@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-- **pitch**, one palette shared by ember, shtick, cinder, flare and lore: cool blue/violet hues on the terminal's own black. Backgrounds stay transparent, completion menus included (the current item is bold instead of shaded). shtick's accent is cyan. The `tide`, `phosphor` and `chalk` themes (and their screenshots) are gone; a config that still names one falls back to pitch with a warning.
+- **Renamed: shtick is now `:sh`** (repository and package `sh-term`). The command is `:sh`, with `sh-term` as a plain alias for scripts and Makefiles. Settings and history move from `~/.config/shtick` and `~/.local/share/shtick` to `sh-term` folders automatically on first start (the old folders are kept), and the installer removes the old shtick installation. Environment variables are now `SH_TERM_*` instead of `SHTICK_*`, saved test files are named `*.test.sh` in the docs (any name works), and the start screen reads `:SH`.
+- **pitch**, one palette shared by `:py`, `:sh`, `:js`, `:http` and `:docs`: cool blue/violet hues on the terminal's own black. Backgrounds stay transparent, completion menus included (the current item is bold instead of shaded). `:sh`'s accent is cyan. The `tide`, `phosphor` and `chalk` themes (and their screenshots) are gone; a config that still names one falls back to pitch with a warning.
 
 ## 0.2.0
 

@@ -15,10 +15,10 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.formatted_text import StyleAndTextTuples
 from prompt_toolkit.utils import get_cwidth
 
-from shtick.magics import MAGICS
+from sh_term.magics import MAGICS
 
 if TYPE_CHECKING:
-    from shtick.shell import Shell
+    from sh_term.shell import Shell
 
 KEYWORDS = ("if", "then", "else", "elif", "fi", "for", "while", "until", "do", "done", "case", "esac", "in", "function", "select", "time")
 BUILTINS = (
@@ -73,11 +73,11 @@ class SessionNames:
         except Exception:
             return
         parts = (out.split("---\n") + ["", "", ""])[:3]
-        clean = lambda text: sorted({w for w in text.split() if not w.startswith("__shtick")})  # noqa: E731
+        clean = lambda text: sorted({w for w in text.split() if not w.startswith("__sh_term")})  # noqa: E731
         self.functions, self.aliases, self.variables = clean(parts[0]), clean(parts[1]), clean(parts[2])
 
 
-class ShtickCompleter(Completer):
+class ShTermCompleter(Completer):
     def __init__(self, shell: Shell):
         self.shell = shell
         self.names = SessionNames(shell)
@@ -281,7 +281,7 @@ class FlagHinter:
             if command in self.cache or command in self._loading or not shutil.which(command):
                 return
             self._loading.add(command)
-        threading.Thread(target=self._load, args=(command,), name="shtick-flags", daemon=True).start()
+        threading.Thread(target=self._load, args=(command,), name="sh-term-flags", daemon=True).start()
 
     def _load(self, command: str) -> None:
         flags = load_flags(command)

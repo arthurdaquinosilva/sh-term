@@ -1,13 +1,13 @@
-# shtick — notes for later
+# :sh — notes for later
 
 Snapshot from 2026-11-18 (v0.2.0 plus unreleased changes). This is a working list toward a "production grade" 1.0, most important first.
 
 ## State
 
-- The most mature of the family after ember. About 5,900 lines in `src/` and about 1,400 lines of tests. **243 tests pass** locally (50 s). CI runs Ubuntu and macOS on Python 3.10–3.13 with shellcheck, dash and zsh installed, a docs-are-current check and pytest-timeout.
+- The most mature of the family after :py. About 5,900 lines in `src/` and about 1,400 lines of tests. **243 tests pass** locally (50 s). CI runs Ubuntu and macOS on Python 3.10–3.13 with shellcheck, dash and zsh installed, a docs-are-current check and pytest-timeout.
 - Only 2 broad `except` handlers. Good discipline.
 - Docs: commands (generated), configuration, features, how-it-works, releasing.
-- Uncommitted: `src/shtick/theme.py` (pitch palette tweak, same as ember's). Commit it and add it to CHANGELOG "Unreleased".
+- Uncommitted: `src/sh_term/theme.py` (pitch palette tweak, same as :py's). Commit it and add it to CHANGELOG "Unreleased".
 
 ## 1. Cleanup
 
@@ -22,7 +22,7 @@ Snapshot from 2026-11-18 (v0.2.0 plus unreleased changes). This is a working lis
 - [ ] Measure coverage with `pytest-cov`, with a threshold.
 - [ ] Add Python 3.14 to CI and the classifiers.
 
-## 3. Safety and correctness (shtick runs arbitrary shell code)
+## 3. Safety and correctness (:sh runs arbitrary shell code)
 
 - [ ] `%sandbox` is a working-directory sandbox, not a security boundary (the docstring says so). Make that very visible in the README and in `%sandbox` help. Optionally add a real isolation mode: `bwrap` on Linux, `sandbox-exec` on macOS, or a container when available.
 - [ ] Test behaviour when the persistent shell dies, hangs, or is killed (`exit`, `exec`, `kill $$`, endless output). Recovery should be clean, with a clear message.
@@ -30,7 +30,7 @@ Snapshot from 2026-11-18 (v0.2.0 plus unreleased changes). This is a working lis
 
 ## 4. Diagnosability
 
-- [ ] No logging. Add `--debug` / `SHTICK_LOG`, a crash report file and `shtick --doctor` (shell versions, shellcheck present, terminal capabilities).
+- [ ] No logging. Add `--debug` / `SH_TERM_LOG`, a crash report file and `:sh --doctor` (shell versions, shellcheck present, terminal capabilities).
 
 ## 5. Releases and distribution
 
@@ -46,4 +46,4 @@ Snapshot from 2026-11-18 (v0.2.0 plus unreleased changes). This is a working lis
 
 ## Shared with the family
 
-The pitch palette is copied into each repo, and the release, installer, logging and `--doctor` work is the same across all of them. Solve it once in ember and port it here.
+The pitch palette is copied into each repo, and the release, installer, logging and `--doctor` work is the same across all of them. Solve it once in :py and port it here.

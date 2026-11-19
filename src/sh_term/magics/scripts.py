@@ -11,12 +11,12 @@ from typing import TYPE_CHECKING
 from rich.table import Table
 from rich.text import Text
 
-from shtick.engine import quote
-from shtick.magics import MagicError, magic, parse_args, split_args
-from shtick.scripts import Script
+from sh_term.engine import quote
+from sh_term.magics import MagicError, magic, parse_args, split_args
+from sh_term.scripts import Script
 
 if TYPE_CHECKING:
-    from shtick.shell import Shell
+    from sh_term.shell import Shell
 
 
 def _script(shell: Shell) -> Script:
@@ -29,8 +29,8 @@ def show_outline(shell: Shell, around: int | None = None, context: int = 4) -> N
     script = _script(shell)
     grid = Table.grid(padding=(0, 1))
     grid.add_column(width=1, no_wrap=True)
-    grid.add_column(justify="right", style="shtick.faint", no_wrap=True)
-    grid.add_column(justify="right", style="shtick.muted", no_wrap=True)
+    grid.add_column(justify="right", style="sh_term.faint", no_wrap=True)
+    grid.add_column(justify="right", style="sh_term.muted", no_wrap=True)
     grid.add_column(overflow="ellipsis", no_wrap=True)
     chunks = script.chunks
     breaks = script.breakpoint_chunks()
@@ -40,21 +40,21 @@ def show_outline(shell: Shell, around: int | None = None, context: int = 4) -> N
         hi = min(len(chunks), lo + 2 * context + 1)
         lo = max(0, hi - 2 * context - 1)
     if lo > 0:
-        grid.add_row("", "", "", Text(f"… {lo} above", style="shtick.faint"))
+        grid.add_row("", "", "", Text(f"… {lo} above", style="sh_term.faint"))
     for i in range(lo, hi):
         chunk = chunks[i]
         current = i == script.pos
         done = i < script.pos
-        marker = Text("▸", style="shtick.accent.bold") if current else Text("●", style="shtick.err.bold") if i in breaks else Text("")
-        summary = Text(chunk.summary, style="shtick.fg.bold" if current else "shtick.faint" if done else "shtick.fg")
+        marker = Text("▸", style="sh_term.accent.bold") if current else Text("●", style="sh_term.err.bold") if i in breaks else Text("")
+        summary = Text(chunk.summary, style="sh_term.fg.bold" if current else "sh_term.faint" if done else "sh_term.fg")
         grid.add_row(marker, str(i + 1), chunk.lines, summary)
     if hi < len(chunks):
-        grid.add_row("", "", "", Text(f"… {len(chunks) - hi} below", style="shtick.faint"))
-    head = Text.assemble(("", ""), (script.name, "shtick.accent.bold"), (f"  {len(chunks)} commands", "shtick.muted"))
+        grid.add_row("", "", "", Text(f"… {len(chunks) - hi} below", style="sh_term.faint"))
+    head = Text.assemble(("", ""), (script.name, "sh_term.accent.bold"), (f"  {len(chunks)} commands", "sh_term.muted"))
     if script.args:
-        head.append(f"  args: {shlex.join(script.args)}", style="shtick.faint")
+        head.append(f"  args: {shlex.join(script.args)}", style="sh_term.faint")
     if script.done:
-        head.append("  · at the end", style="shtick.ok")
+        head.append("  · at the end", style="sh_term.ok")
     shell.print(head)
     shell.print(grid)
 
@@ -97,9 +97,9 @@ def _run_chunks(shell: Shell, count: int | None, keep_going: bool) -> None:
             chunk = script.chunks[i]
             if not shell._magic_cells:
                 shell.print()
-            shell.print(Text.assemble(("● ", "shtick.err.bold"), (f"breakpoint at {script.name}:{chunk.lines}", "shtick.fg"),
-                                      ("  ", ""), (chunk.summary, "shtick.muted")))
-            shell.print(Text("%next runs it · %step edits it first · %run continues · %vars shows the state", style="shtick.faint"))
+            shell.print(Text.assemble(("● ", "sh_term.err.bold"), (f"breakpoint at {script.name}:{chunk.lines}", "sh_term.fg"),
+                                      ("  ", ""), (chunk.summary, "sh_term.muted")))
+            shell.print(Text("%next runs it · %step edits it first · %run continues · %vars shows the state", style="sh_term.faint"))
             shell.spacing()
             return
         script.pos += 1
@@ -119,10 +119,10 @@ def _run_chunks(shell: Shell, count: int | None, keep_going: bool) -> None:
     if count is not None and not script.done:
         return  # the block's status line and the prompt's footer already say where we are
     if script.done:
-        shell.print(Text.assemble(("✓ ", "shtick.ok"), (f"reached the end of {script.name}", "shtick.muted")))
+        shell.print(Text.assemble(("✓ ", "sh_term.ok"), (f"reached the end of {script.name}", "sh_term.muted")))
     else:
-        shell.print(Text.assemble(("next ", "shtick.faint"), (f"{script.pos + 1}/{len(script.chunks)} ", "shtick.muted"),
-                                  (script.chunks[script.pos].summary, "shtick.fg")))
+        shell.print(Text.assemble(("next ", "sh_term.faint"), (f"{script.pos + 1}/{len(script.chunks)} ", "sh_term.muted"),
+                                  (script.chunks[script.pos].summary, "sh_term.fg")))
     shell.spacing()
 
 
@@ -141,8 +141,8 @@ def m_step(shell: Shell, args: str):
         raise MagicError(f"{script.name} is at the end — %goto 1 to start over")
     shell.next_input = script.chunks[script.pos].code
     shell.step_pending = script.pos
-    shell.print(Text.assemble(("▸ ", "shtick.accent"), (script.label(script.pos), "shtick.label"),
-                              ("  in the input: enter runs it", "shtick.faint")))
+    shell.print(Text.assemble(("▸ ", "sh_term.accent"), (script.label(script.pos), "sh_term.label"),
+                              ("  in the input: enter runs it", "sh_term.faint")))
 
 
 @magic("run", doc="run the rest of the open script, or open and run a file: %run [-k] [--all] [FILE [args…]]",
@@ -166,15 +166,15 @@ def m_break(shell: Shell, args: str):
     words = split_args(args)
     if not words:
         if not script.breakpoints:
-            shell.print(Text(f"no breakpoints in {script.name} — %break LINE", style="shtick.muted"))
+            shell.print(Text(f"no breakpoints in {script.name} — %break LINE", style="sh_term.muted"))
         for line in sorted(script.breakpoints):
             i = script.chunk_at(line)
             where = f"{script.chunks[i].lines}  {script.chunks[i].summary}" if i is not None else "past the end"
-            shell.print(Text.assemble(("● ", "shtick.err.bold"), (f"{script.name}:{line}", "shtick.fg"), ("  → ", "shtick.faint"), (where, "shtick.muted")))
+            shell.print(Text.assemble(("● ", "sh_term.err.bold"), (f"{script.name}:{line}", "sh_term.fg"), ("  → ", "sh_term.faint"), (where, "sh_term.muted")))
         return
     if words == ["--clear"]:
         script.breakpoints.clear()
-        shell.print(Text("breakpoints cleared", style="shtick.muted"))
+        shell.print(Text("breakpoints cleared", style="sh_term.muted"))
         return
     remove = words[0] == "-d"
     lines = words[1:] if remove else words
@@ -229,7 +229,7 @@ def m_edit(shell: Shell, args: str):
             shell.script.reload()
         except OSError as e:
             raise MagicError(f"can't reload: {e.strerror or e}") from None
-        shell.print(Text.assemble(("reloaded ", "shtick.muted"), (shell.script.name, "shtick.accent.bold")))
+        shell.print(Text.assemble(("reloaded ", "sh_term.muted"), (shell.script.name, "sh_term.accent.bold")))
         show_outline(shell, around=shell.script.pos)
     elif words:
         m_open(shell, shlex.join(words))
@@ -240,7 +240,7 @@ def m_close(shell: Shell, args: str):
     script = _script(shell)
     shell.script = None
     shell.step_pending = None
-    shell.print(Text.assemble(("closed ", "shtick.muted"), (script.name, "shtick.fg")))
+    shell.print(Text.assemble(("closed ", "sh_term.muted"), (script.name, "sh_term.fg")))
 
 
 @magic("trace", doc="run code with set -x and show each executed command: %trace [code] · body on next lines",
@@ -287,8 +287,8 @@ def m_watch(shell: Shell, args: str):
     import sys
     import time
 
-    from shtick import lint
-    from shtick.shell import keys_one_by_one
+    from sh_term import lint
+    from sh_term.shell import keys_one_by_one
 
     words = split_args(args)
     runs_limit = None
@@ -321,12 +321,12 @@ def m_watch(shell: Shell, args: str):
             cell = shell.execute(command, label=f"{words[0]} · run {runs} · watching")
             findings = lint.check(Path(path).read_text(errors="replace"), shell.session.kind) if lint.shellcheck_path() else []
             if findings:
-                shell.print(Text.assemble(("⚠ ", "shtick.warn"), (f"shellcheck: {len(findings)} findings", "shtick.fg"),
-                                          (f" · first: SC{findings[0].code} line {findings[0].line}", "shtick.muted"),
-                                          (f" · %lint {words[0]}", "shtick.faint")))
+                shell.print(Text.assemble(("⚠ ", "sh_term.warn"), (f"shellcheck: {len(findings)} findings", "sh_term.fg"),
+                                          (f" · first: SC{findings[0].code} line {findings[0].line}", "sh_term.muted"),
+                                          (f" · %lint {words[0]}", "sh_term.faint")))
             if cell.result.interrupted or (runs_limit is not None and runs >= runs_limit):
                 break
-            shell.print(Text(f"watching {words[0]} · saves run it again · q or ctrl+c stops", style="shtick.faint"))
+            shell.print(Text(f"watching {words[0]} · saves run it again · q or ctrl+c stops", style="sh_term.faint"))
             with keys_one_by_one(sys.__stdin__.fileno(), enabled=interactive):
                 while mtime() == seen:
                     if interactive:
@@ -339,5 +339,5 @@ def m_watch(shell: Shell, args: str):
                 seen = mtime()
     except KeyboardInterrupt:
         pass
-    shell.print(Text(f"stopped watching {words[0]} after {runs} runs", style="shtick.muted"))
+    shell.print(Text(f"stopped watching {words[0]} after {runs} runs", style="sh_term.muted"))
     shell.spacing()

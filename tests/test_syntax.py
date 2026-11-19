@@ -2,7 +2,7 @@ import shutil
 
 import pytest
 
-from shtick.syntax import is_complete, split_script, strip_prompts
+from sh_term.syntax import is_complete, split_script, strip_prompts
 
 
 @pytest.mark.parametrize("code", [

@@ -82,11 +82,27 @@ class Profile:
 
 
 def _base(env: str, fallback: str) -> Path:
-    return Path(os.environ.get(env) or os.path.expanduser(fallback)) / "shtick"
+    parent = Path(os.environ.get(env) or os.path.expanduser(fallback))
+    base = parent / "sh-term"
+    _migrate(parent / "shtick", base)
+    return base
+
+
+def _migrate(old: Path, new: Path) -> None:
+    """:sh used to be called shtick: copy its settings and history over once, unless
+    the new folder already holds more than the installer's venv. The old folder is left alone."""
+    if not old.is_dir() or (new.is_dir() and any(p.name != "venv" for p in new.iterdir())):
+        return
+    try:
+        import shutil
+
+        shutil.copytree(old, new, symlinks=True, dirs_exist_ok=True, ignore=shutil.ignore_patterns("venv"))
+    except OSError:
+        pass
 
 
 def load_profile(name: str | None = None) -> Profile:
-    name = name or os.environ.get("SHTICK_PROFILE") or "default"
+    name = name or os.environ.get("SH_TERM_PROFILE") or "default"
     config, data = _base("XDG_CONFIG_HOME", "~/.config"), _base("XDG_DATA_HOME", "~/.local/share")
     if name != "default":
         config, data = config / "profiles" / name, data / "profiles" / name
@@ -138,12 +154,12 @@ def load_settings(profile: Profile | None) -> tuple[Settings, list[str]]:
             data = tomllib.loads(profile.config_file.read_text())
         except (OSError, ValueError) as e:
             warnings.append(f"could not read {profile.config_file}: {e}")
-    for env, key in (("SHTICK_THEME", "theme"), ("SHTICK_SHELL", "shell")):
+    for env, key in (("SH_TERM_THEME", "theme"), ("SH_TERM_SHELL", "shell")):
         if value := os.environ.get(env):
             data[key] = value
     for key, value in data.items():
         if key == "theme":
-            from shtick.theme import DEFAULT_THEME, PALETTES
+            from sh_term.theme import DEFAULT_THEME, PALETTES
 
             if value not in PALETTES:
                 warnings.append(f"config: unknown theme {value!r} — using {DEFAULT_THEME} (themes: {', '.join(PALETTES)})")

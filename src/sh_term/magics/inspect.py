@@ -14,13 +14,13 @@ from rich import box
 from rich.table import Table
 from rich.text import Text
 
-from shtick.engine import CellResult, Session, ShellNotFound, available_shells
-from shtick.magics import MagicError, magic, split_args, take_flags
+from sh_term.engine import CellResult, Session, ShellNotFound, available_shells
+from sh_term.magics import MagicError, magic, split_args, take_flags
 
-from shtick.paths import fit_path
+from sh_term.paths import fit_path
 
 if TYPE_CHECKING:
-    from shtick.shell import Shell
+    from sh_term.shell import Shell
 
 
 # ── %vars ─────────────────────────────────────────────────────────────────
@@ -29,14 +29,14 @@ if TYPE_CHECKING:
 # (`name<TAB>checksum`), so values with newlines can't confuse the parser.
 QUERIES = {
     "bash": (
-        'for __shtick_n in $(compgen -v); do declare -p "$__shtick_n" 2>/dev/null; printf "\\0"; done; printf "\\1\\0"; '
-        'for __shtick_n in $(compgen -A function); do printf "%s\\t" "$__shtick_n"; declare -f "$__shtick_n" | cksum; printf "\\0"; done; '
-        "unset __shtick_n"
+        'for __sh_term_n in $(compgen -v); do declare -p "$__sh_term_n" 2>/dev/null; printf "\\0"; done; printf "\\1\\0"; '
+        'for __sh_term_n in $(compgen -A function); do printf "%s\\t" "$__sh_term_n"; declare -f "$__sh_term_n" | cksum; printf "\\0"; done; '
+        "unset __sh_term_n"
     ),
     "zsh": (
-        'for __shtick_n in ${(k)parameters}; do case ${parameters[$__shtick_n]} in *special*) ;; *) typeset -p -- "$__shtick_n"; printf "\\0";; esac; done; '
-        'printf "\\1\\0"; for __shtick_n in ${(k)functions}; do printf "%s\\t" "$__shtick_n"; functions -- "$__shtick_n" | cksum; printf "\\0"; done; '
-        "unset __shtick_n"
+        'for __sh_term_n in ${(k)parameters}; do case ${parameters[$__sh_term_n]} in *special*) ;; *) typeset -p -- "$__sh_term_n"; printf "\\0";; esac; done; '
+        'printf "\\1\\0"; for __sh_term_n in ${(k)functions}; do printf "%s\\t" "$__sh_term_n"; functions -- "$__sh_term_n" | cksum; printf "\\0"; done; '
+        "unset __sh_term_n"
     ),
     # dash and POSIX sh: `set` lists variables (values quoted, maybe over several lines); functions can't be listed
     "sh": 'set; printf "\\0\\1\\0"',
@@ -44,7 +44,7 @@ QUERIES = {
 
 DYNAMIC = re.compile(
     r"^(BASH_\w+|BASHPID|BASHOPTS|COLUMNS|LINES|EPOCHREALTIME|EPOCHSECONDS|FUNCNAME|LINENO|OLDPWD|PWD|PIPESTATUS|PPID|RANDOM|"
-    r"SECONDS|SRANDOM|_|HISTCMD|SHLVL|COMP_WORDBREAKS|OPTIND|OPTARG|IFS|PS4|__shtick\w*|argv|status|pipestatus|funcfiletrace|"
+    r"SECONDS|SRANDOM|_|HISTCMD|SHLVL|COMP_WORDBREAKS|OPTIND|OPTARG|IFS|PS4|__sh_term\w*|argv|status|pipestatus|funcfiletrace|"
     r"funcsourcetrace|funcstack|functrace|zsh_eval_context|TTYIDLE|ZSH_\w+|EUID|UID|GID|EGID|ERRNO|TRY_BLOCK_\w+|BUFFER\w*)$"
 )
 _NAME = re.compile(r"^(?:(?:declare|typeset|local|export|readonly)\s+(?:-\S+\s+)*)?([A-Za-z_][A-Za-z0-9_]*)(?:=|$)")
@@ -83,7 +83,7 @@ def snapshot(session: Session) -> Snapshot:
             snap.variables[m[1]] = record
     for record in functions_part.split("\x00"):
         name, _, digest = record.strip("\n").partition("\t")
-        if name and not name.startswith("__shtick"):
+        if name and not name.startswith("__sh_term"):
             snap.functions[name] = digest
     return snap
 
@@ -107,7 +107,7 @@ def m_vars(shell: Shell, args: str):
     if words:
         for name in words:
             if name in now.variables:
-                shell.print(Text(now.variables[name], style="shtick.fg"))
+                shell.print(Text(now.variables[name], style="sh_term.fg"))
             elif name in now.functions:
                 body = shell.session.query(f"declare -f {shlex.quote(name)} 2>/dev/null || functions -- {shlex.quote(name)}").stdout
                 from rich.syntax import Syntax
@@ -128,36 +128,36 @@ def m_vars(shell: Shell, args: str):
     for name in names:
         new, old = now.variables.get(name), base.variables.get(name)
         if new is not None and old is None:
-            rows.append(Text.assemble(("+ ", "shtick.added"), (name, "shtick.fg.bold"), ("=", "shtick.faint"), (clip(_value(new)), "shtick.string")))
+            rows.append(Text.assemble(("+ ", "sh_term.added"), (name, "sh_term.fg.bold"), ("=", "sh_term.faint"), (clip(_value(new)), "sh_term.string")))
         elif new is None and old is not None:
-            rows.append(Text.assemble(("− ", "shtick.deleted"), (name, "shtick.fg.bold"), ("  unset", "shtick.faint")))
+            rows.append(Text.assemble(("− ", "sh_term.deleted"), (name, "sh_term.fg.bold"), ("  unset", "sh_term.faint")))
         elif new != old:
-            rows.append(Text.assemble(("~ ", "shtick.modified"), (name, "shtick.fg.bold"), ("=", "shtick.faint"), (clip(_value(new or "")), "shtick.string")))
+            rows.append(Text.assemble(("~ ", "sh_term.modified"), (name, "sh_term.fg.bold"), ("=", "sh_term.faint"), (clip(_value(new or "")), "sh_term.string")))
         elif flags:
-            rows.append(Text.assemble(("  ", ""), (name, "shtick.fg"), ("=", "shtick.faint"), (clip(_value(new or "")), "shtick.muted")))
+            rows.append(Text.assemble(("  ", ""), (name, "sh_term.fg"), ("=", "sh_term.faint"), (clip(_value(new or "")), "sh_term.muted")))
     if rows:
-        shell.print(Text("variables", style="shtick.muted.bold"))
+        shell.print(Text("variables", style="sh_term.muted.bold"))
         for row in rows:
             shell.print(Text.assemble(("  ", ""), row), no_wrap=True, overflow="ellipsis")
     functions: list[Text] = []
     for name in sorted(set(now.functions) | set(base.functions)):
         new, old = now.functions.get(name), base.functions.get(name)
         if old is None:
-            functions.append(Text.assemble(("+ ", "shtick.added"), (name, "shtick.fg.bold"), ("()", "shtick.faint")))
+            functions.append(Text.assemble(("+ ", "sh_term.added"), (name, "sh_term.fg.bold"), ("()", "sh_term.faint")))
         elif new is None:
-            functions.append(Text.assemble(("− ", "shtick.deleted"), (name, "shtick.fg.bold"), ("()  unset", "shtick.faint")))
+            functions.append(Text.assemble(("− ", "sh_term.deleted"), (name, "sh_term.fg.bold"), ("()  unset", "sh_term.faint")))
         elif new != old:
-            functions.append(Text.assemble(("~ ", "shtick.modified"), (name, "shtick.fg.bold"), ("()  redefined", "shtick.faint")))
+            functions.append(Text.assemble(("~ ", "sh_term.modified"), (name, "sh_term.fg.bold"), ("()  redefined", "sh_term.faint")))
     if functions:
         if rows:
             shell.print()
-        shell.print(Text("functions", style="shtick.muted.bold"))
+        shell.print(Text("functions", style="sh_term.muted.bold"))
         for row in functions:
             shell.print(Text.assemble(("  ", ""), row))
     if not rows and not functions:
-        shell.print(Text("nothing defined or changed since the session started", style="shtick.muted"))
+        shell.print(Text("nothing defined or changed since the session started", style="sh_term.muted"))
     if not now.can_list_functions:
-        shell.print(Text(f"{shell.session.kind} can't list functions, so they aren't shown", style="shtick.faint"))
+        shell.print(Text(f"{shell.session.kind} can't list functions, so they aren't shown", style="sh_term.faint"))
 
 
 # ── %env ──────────────────────────────────────────────────────────────────
@@ -186,7 +186,7 @@ def m_env(shell: Shell, args: str):
         for name in words:
             if name not in now:
                 raise MagicError(f"{name} isn't exported")
-            shell.print(Text.assemble((name, "shtick.fg.bold"), ("=", "shtick.faint"), (now[name], "shtick.string")))
+            shell.print(Text.assemble((name, "sh_term.fg.bold"), ("=", "sh_term.faint"), (now[name], "sh_term.string")))
         return
     base = shell.env_baseline or {}
     width = max(20, shell.ui.width - 8)
@@ -199,22 +199,22 @@ def m_env(shell: Shell, args: str):
     for name in sorted(set(now) | set(base)):
         new, old = now.get(name), base.get(name)
         if new is not None and old is None:
-            rows.append(Text.assemble(("+ ", "shtick.added"), (name, "shtick.fg.bold"), ("=", "shtick.faint"), (clip(new), "shtick.string")))
+            rows.append(Text.assemble(("+ ", "sh_term.added"), (name, "sh_term.fg.bold"), ("=", "sh_term.faint"), (clip(new), "sh_term.string")))
         elif new is None:
-            rows.append(Text.assemble(("− ", "shtick.deleted"), (name, "shtick.fg.bold"), ("  removed", "shtick.faint")))
+            rows.append(Text.assemble(("− ", "sh_term.deleted"), (name, "sh_term.fg.bold"), ("  removed", "sh_term.faint")))
         elif new != old:
             detail = new
             if name.endswith("PATH") and ":" in new:
                 added = [p for p in new.split(":") if p not in old.split(":")]
                 removed = [p for p in old.split(":") if p not in new.split(":")]
                 detail = " ".join([*(f"+{p}" for p in added), *(f"-{p}" for p in removed)]) or "reordered"
-            rows.append(Text.assemble(("~ ", "shtick.modified"), (name, "shtick.fg.bold"), ("  ", ""), (clip(detail), "shtick.string")))
+            rows.append(Text.assemble(("~ ", "sh_term.modified"), (name, "sh_term.fg.bold"), ("  ", ""), (clip(detail), "sh_term.string")))
         elif flags:
-            rows.append(Text.assemble(("  ", ""), (name, "shtick.fg"), ("=", "shtick.faint"), (clip(new), "shtick.muted")))
+            rows.append(Text.assemble(("  ", ""), (name, "sh_term.fg"), ("=", "sh_term.faint"), (clip(new), "sh_term.muted")))
     for row in rows:
         shell.print(Text.assemble(("  ", ""), row), no_wrap=True, overflow="ellipsis")
     if not rows:
-        shell.print(Text("the environment hasn't changed since the session started", style="shtick.muted"))
+        shell.print(Text("the environment hasn't changed since the session started", style="sh_term.muted"))
 
 
 # ── %compare ──────────────────────────────────────────────────────────────
@@ -258,7 +258,7 @@ def m_compare(shell: Shell, args: str):
     sessions: list[Session] = []
     try:
         for name in shells:
-            sessions.append(Session(name, cwd=shell.session.cwd if here else tempfile.mkdtemp(prefix="shtick-compare-")))
+            sessions.append(Session(name, cwd=shell.session.cwd if here else tempfile.mkdtemp(prefix="sh-term-compare-")))
     except ShellNotFound as e:
         for s in sessions:
             s.close()
@@ -291,8 +291,8 @@ def m_compare(shell: Shell, args: str):
         ("stdout", [_clip_lines(r.stdout) for _, r in results]),
         ("stderr", [errors(r) for _, r in results]),
     ]
-    table = Table(box=box.SIMPLE_HEAD, border_style="shtick.border", header_style="shtick.accent.bold", show_edge=False, pad_edge=False, expand=True)
-    table.add_column("", style="shtick.muted", no_wrap=True)
+    table = Table(box=box.SIMPLE_HEAD, border_style="sh_term.border", header_style="sh_term.accent.bold", show_edge=False, pad_edge=False, expand=True)
+    table.add_column("", style="sh_term.muted", no_wrap=True)
     for label, _ in results:
         table.add_column(label, overflow="fold", ratio=1)
     differing = []
@@ -302,11 +302,11 @@ def m_compare(shell: Shell, args: str):
             differing.append(name)
         cells = []
         for v in values:
-            style = "shtick.faint" if same else "shtick.stderr" if name == "stderr" else "shtick.fg"
-            cells.append(Text(v if v else "—", style=style if v else "shtick.faint"))
-        table.add_row(Text(name, style="shtick.muted" if same else "shtick.warn.bold"), *cells)
+            style = "sh_term.faint" if same else "sh_term.stderr" if name == "stderr" else "sh_term.fg"
+            cells.append(Text(v if v else "—", style=style if v else "sh_term.faint"))
+        table.add_row(Text(name, style="sh_term.muted" if same else "sh_term.warn.bold"), *cells)
     shell.print(table)
     if differing:
-        shell.print(Text.assemble(("✗ ", "shtick.warn"), ("differs in " + ", ".join(differing), "shtick.fg")))
+        shell.print(Text.assemble(("✗ ", "sh_term.warn"), ("differs in " + ", ".join(differing), "sh_term.fg")))
     else:
-        shell.print(Text.assemble(("✓ ", "shtick.ok"), ("same exit status and output in all shells", "shtick.muted")))
+        shell.print(Text.assemble(("✓ ", "sh_term.ok"), ("same exit status and output in all shells", "sh_term.muted")))

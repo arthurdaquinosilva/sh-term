@@ -57,7 +57,7 @@ class Palette:
 
 PALETTES: dict[str, Palette] = {
     # pitch: cool blue/violet hues on a pitch-black terminal, shared by all the tools;
-    # each one gets its own accent (shtick's is cyan).
+    # each one gets its own accent (:sh's is cyan).
     "pitch": Palette(
         name="pitch",
         fg="#c0caf5",
@@ -102,7 +102,7 @@ class Theme:
     def pygments_style(self) -> type[PygmentsStyle]:
         p = self.p
         return type(
-            f"Shtick{p.name.title()}Style",
+            f"ShTerm{p.name.title()}Style",
             (PygmentsStyle,),
             {
                 "background_color": None,
@@ -207,7 +207,7 @@ class Theme:
                 "matching-bracket.cursor": f"bg:{p.selection} bold",
                 "matching-bracket.other": f"bg:{p.selection} bold",
                 "selected": f"bg:{p.selection}",
-                # Completions are a plain list under the prompt, like querky's: no box, accent on the current one.
+                # Completions are a plain list under the prompt, like :sql's: no box, accent on the current one.
                 "completion-menu": p.fg,
                 "completion-menu.completion": p.fg,
                 "completion-menu.completion.current": f"bold {p.accent}",
@@ -238,38 +238,38 @@ class Theme:
         p = self.p
         return RichTheme(
             {
-                "shtick.fg": p.fg,
-                "shtick.muted": p.muted,
-                "shtick.faint": p.faint,
-                "shtick.border": p.border,
-                "shtick.accent": p.accent,
-                "shtick.accent2": p.accent2,
-                "shtick.ok": p.ok,
-                "shtick.err": p.err,
-                "shtick.warn": p.warn,
-                "shtick.info": p.info,
-                "shtick.label": f"bold {p.label}",
-                "shtick.accent.bold": f"bold {p.accent}",
-                "shtick.accent.blink": f"bold blink {p.accent}",
-                "shtick.err.bold": f"bold {p.err}",
-                "shtick.fg.bold": f"bold {p.fg}",
-                "shtick.info.bold": f"bold {p.info}",
-                "shtick.keyword": p.keyword,
-                "shtick.class": p.klass,
-                "shtick.string": p.string,
-                "shtick.warn.bold": f"bold {p.warn}",
-                "shtick.ok.bold": f"bold {p.ok}",
-                "shtick.muted.bold": f"bold {p.muted}",
-                "shtick.rail": p.border,
-                "shtick.rail.err": p.err,
-                "shtick.input": f"bold {p.accent2}",
-                "shtick.stderr": p.stderr,
-                "shtick.trace": p.muted,
-                "shtick.trace.loc": p.faint,
-                "shtick.trace.depth": p.border,
-                "shtick.added": p.ok,
-                "shtick.modified": p.warn,
-                "shtick.deleted": p.err,
+                "sh_term.fg": p.fg,
+                "sh_term.muted": p.muted,
+                "sh_term.faint": p.faint,
+                "sh_term.border": p.border,
+                "sh_term.accent": p.accent,
+                "sh_term.accent2": p.accent2,
+                "sh_term.ok": p.ok,
+                "sh_term.err": p.err,
+                "sh_term.warn": p.warn,
+                "sh_term.info": p.info,
+                "sh_term.label": f"bold {p.label}",
+                "sh_term.accent.bold": f"bold {p.accent}",
+                "sh_term.accent.blink": f"bold blink {p.accent}",
+                "sh_term.err.bold": f"bold {p.err}",
+                "sh_term.fg.bold": f"bold {p.fg}",
+                "sh_term.info.bold": f"bold {p.info}",
+                "sh_term.keyword": p.keyword,
+                "sh_term.class": p.klass,
+                "sh_term.string": p.string,
+                "sh_term.warn.bold": f"bold {p.warn}",
+                "sh_term.ok.bold": f"bold {p.ok}",
+                "sh_term.muted.bold": f"bold {p.muted}",
+                "sh_term.rail": p.border,
+                "sh_term.rail.err": p.err,
+                "sh_term.input": f"bold {p.accent2}",
+                "sh_term.stderr": p.stderr,
+                "sh_term.trace": p.muted,
+                "sh_term.trace.loc": p.faint,
+                "sh_term.trace.depth": p.border,
+                "sh_term.added": p.ok,
+                "sh_term.modified": p.warn,
+                "sh_term.deleted": p.err,
                 "repr.path": p.decorator,
                 "table.header": f"bold {p.accent}",
                 "table.footer": p.muted,

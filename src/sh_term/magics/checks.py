@@ -8,13 +8,13 @@ from typing import TYPE_CHECKING
 
 from rich.text import Text
 
-from shtick import lint, testing
-from shtick.engine import quote
-from shtick.magics import MagicError, magic, split_args, take_flags
-from shtick.magics.core import flag
+from sh_term import lint, testing
+from sh_term.engine import quote
+from sh_term.magics import MagicError, magic, split_args, take_flags
+from sh_term.magics.core import flag
 
 if TYPE_CHECKING:
-    from shtick.shell import Cell, Shell
+    from sh_term.shell import Cell, Shell
 
 
 # ── %lint ─────────────────────────────────────────────────────────────────
@@ -26,20 +26,20 @@ def render_findings(shell: Shell, source: str, findings: list[lint.Finding], nam
     for f in findings:
         counts[f.severity] = counts.get(f.severity, 0) + 1
         shell.print(Text.assemble(
-            (f"{f.severity:<7} ", f"lint.{f.severity}"), (f.label, "shtick.accent"), ("  ", ""),
-            (f"{name}:{f.line}:{f.column}", "shtick.faint"),
+            (f"{f.severity:<7} ", f"lint.{f.severity}"), (f.label, "sh_term.accent"), ("  ", ""),
+            (f"{name}:{f.line}:{f.column}", "sh_term.faint"),
         ))
         if 0 < f.line <= len(lines):
             code = lines[f.line - 1].expandtabs(8)
-            shell.print(Text.assemble(("  │ ", "shtick.rail"), (code, "shtick.fg")))
+            shell.print(Text.assemble(("  │ ", "sh_term.rail"), (code, "sh_term.fg")))
             width = max(1, f.end_column - f.column) if f.end_column > f.column else 1
-            shell.print(Text.assemble(("  │ ", "shtick.rail"), (" " * (f.column - 1) + "^" + "~" * (width - 1), f"lint.{f.severity}")))
-        shell.print(Text.assemble(("  ", ""), (f.message, "shtick.fg")))
-        shell.print(Text.assemble(("  ", ""), (f.url, "shtick.faint")))
+            shell.print(Text.assemble(("  │ ", "sh_term.rail"), (" " * (f.column - 1) + "^" + "~" * (width - 1), f"lint.{f.severity}")))
+        shell.print(Text.assemble(("  ", ""), (f.message, "sh_term.fg")))
+        shell.print(Text.assemble(("  ", ""), (f.url, "sh_term.faint")))
         shell.print()
     summary = " · ".join(f"{n} {sev}" for sev, n in sorted(counts.items(), key=lambda kv: lint.SEVERITY_ORDER.get(kv[0], 9)))
-    shell.print(Text.assemble(("✗ " if findings else "✓ ", "shtick.warn" if findings else "shtick.ok"),
-                              (summary or "no findings", "shtick.muted")))
+    shell.print(Text.assemble(("✗ " if findings else "✓ ", "sh_term.warn" if findings else "sh_term.ok"),
+                              (summary or "no findings", "sh_term.muted")))
 
 
 @magic("lint", doc="shellcheck report for the last cell, a file, or the open script: %lint [FILE | script | N]",
@@ -95,19 +95,19 @@ def _shebang_kind(source: str) -> str | None:
              "After each cell, files created (+), modified (~) and deleted (−) are listed.\n"
              "It's a working-directory sandbox, not a security boundary: absolute paths and cd reach outside.")
 def m_sandbox(shell: Shell, args: str):
-    from shtick.sandbox import Sandbox
-    from shtick.paths import short_path
+    from sh_term.sandbox import Sandbox
+    from sh_term.paths import short_path
 
     found, words = take_flags(split_args(args), "-c", "--copy")
     copy = bool(found)
     action = words[0].lower() if words else ("status" if shell.sandbox else "on")
     if action in ("status", "show"):
         if shell.sandbox is None:
-            shell.print(Text.assemble(("sandbox ", "shtick.muted"), ("off", "shtick.muted")))
+            shell.print(Text.assemble(("sandbox ", "sh_term.muted"), ("off", "sh_term.muted")))
         else:
             sb = shell.sandbox
-            shell.print(Text.assemble(("sandbox ", "shtick.muted"), ("on", "shtick.ok"), ("  ", ""), (short_path(sb.root), "repr.path"),
-                                      (f"  (copy of {short_path(sb.source)})" if sb.copied else "  (started empty)", "shtick.faint")))
+            shell.print(Text.assemble(("sandbox ", "sh_term.muted"), ("on", "sh_term.ok"), ("  ", ""), (short_path(sb.root), "repr.path"),
+                                      (f"  (copy of {short_path(sb.source)})" if sb.copied else "  (started empty)", "sh_term.faint")))
         return
     try:
         on = flag(action, shell.sandbox is not None)
@@ -127,9 +127,9 @@ def m_sandbox(shell: Shell, args: str):
             raise MagicError(f"can't cd into the sandbox: {result.stderr.strip()}")
         shell.session.cwd = str(sandbox.root)
         shell.sandbox = sandbox
-        shell.print(Text.assemble(("sandbox ", "shtick.muted"), ("on", "shtick.ok"), ("  ", ""),
-                                  (f"a copy of {short_path(source)}" if copy else "an empty directory", "shtick.fg")), no_wrap=True, overflow="ellipsis")
-        shell.print(Text(f"in {short_path(sandbox.root)} · deleted by %sandbox off", style="shtick.faint"), no_wrap=True, overflow="ellipsis")
+        shell.print(Text.assemble(("sandbox ", "sh_term.muted"), ("on", "sh_term.ok"), ("  ", ""),
+                                  (f"a copy of {short_path(source)}" if copy else "an empty directory", "sh_term.fg")), no_wrap=True, overflow="ellipsis")
+        shell.print(Text(f"in {short_path(sandbox.root)} · deleted by %sandbox off", style="sh_term.faint"), no_wrap=True, overflow="ellipsis")
     else:
         sandbox = shell.sandbox
         if sandbox is None:
@@ -140,7 +140,7 @@ def m_sandbox(shell: Shell, args: str):
             shell.session.cwd = back
         sandbox.close()
         shell.sandbox = None
-        shell.print(Text.assemble(("sandbox ", "shtick.muted"), ("off", "shtick.muted"), ("  back in ", "shtick.faint"), (short_path(shell.session.cwd), "repr.path")),
+        shell.print(Text.assemble(("sandbox ", "sh_term.muted"), ("off", "sh_term.muted"), ("  back in ", "sh_term.faint"), (short_path(shell.session.cwd), "repr.path")),
                     no_wrap=True, overflow="ellipsis")
 
 
@@ -156,15 +156,15 @@ def _last_cell(shell: Shell) -> Cell:
 
 def show_outcome(shell: Shell, text: str, outcome: testing.Outcome, indent: str = "") -> None:
     if outcome.passed:
-        shell.print(Text.assemble((indent, ""), ("✓ ", "shtick.ok"), (text, "shtick.fg")))
+        shell.print(Text.assemble((indent, ""), ("✓ ", "sh_term.ok"), (text, "sh_term.fg")))
     else:
         if outcome.diff:
-            shell.print(Text.assemble((indent, ""), ("✗ ", "shtick.err.bold"), (text, "shtick.fg")))
+            shell.print(Text.assemble((indent, ""), ("✗ ", "sh_term.err.bold"), (text, "sh_term.fg")))
             for line in outcome.diff:
-                style = "shtick.deleted" if line.startswith("-") else "shtick.added" if line.startswith("+") else "shtick.faint" if line.startswith("@@") else "shtick.muted"
+                style = "sh_term.deleted" if line.startswith("-") else "sh_term.added" if line.startswith("+") else "sh_term.faint" if line.startswith("@@") else "sh_term.muted"
                 shell.print(Text.assemble((indent + "    ", ""), (line, style)), no_wrap=True, overflow="ellipsis")
             return
-        shell.print(Text.assemble((indent, ""), ("✗ ", "shtick.err.bold"), (text, "shtick.fg"), ("  got ", "shtick.faint"), (outcome.detail, "shtick.err")))
+        shell.print(Text.assemble((indent, ""), ("✗ ", "sh_term.err.bold"), (text, "sh_term.fg"), ("  got ", "sh_term.faint"), (outcome.detail, "sh_term.err")))
 
 
 @magic("expect", doc='check the last cell and record it for %test: %expect exit 0 · stdout contains "done"',
@@ -174,13 +174,13 @@ def m_expect(shell: Shell, args: str):
     text = args.strip()
     if not text or text == "--list":
         if not cell.expectations:
-            shell.print(Text(f"cell [{cell.number}] has no expectations — {testing.USAGE.splitlines()[0]}", style="shtick.muted"))
+            shell.print(Text(f"cell [{cell.number}] has no expectations — {testing.USAGE.splitlines()[0]}", style="sh_term.muted"))
         for e in cell.expectations:
             show_outcome(shell, e.text, e.evaluate(testing.Context(cell.result, cell.changes)))
         return
     if text == "--clear":
         cell.expectations.clear()
-        shell.print(Text(f"cleared the expectations of cell [{cell.number}]", style="shtick.muted"))
+        shell.print(Text(f"cleared the expectations of cell [{cell.number}]", style="sh_term.muted"))
         return
     try:
         expectation = testing.parse(text)
@@ -210,40 +210,40 @@ def print_report_cell(shell: Shell, report: testing.CellReport) -> None:
     summary = code[0] + (" …" if len(code) > 1 else "")
     if not report.outcomes and r.syntax_error is None:
         note = "  (exited the shell)" if r.died else ""
-        shell.print(Text.assemble(("· ", "shtick.faint"), (f"[{report.index}] ", "shtick.faint"), (summary, "shtick.faint"), (note, "shtick.faint")))
+        shell.print(Text.assemble(("· ", "sh_term.faint"), (f"[{report.index}] ", "sh_term.faint"), (summary, "sh_term.faint"), (note, "sh_term.faint")))
         return
-    mark = ("✓ ", "shtick.ok") if report.passed else ("✗ ", "shtick.err.bold")
-    shell.print(Text.assemble(mark, (f"[{report.index}] ", "shtick.muted"), (summary, "shtick.fg")))
+    mark = ("✓ ", "sh_term.ok") if report.passed else ("✗ ", "sh_term.err.bold")
+    shell.print(Text.assemble(mark, (f"[{report.index}] ", "sh_term.muted"), (summary, "sh_term.fg")))
     if r.died:
-        shell.print(Text.assemble(("    ", ""), ("· ", "shtick.faint"), (f"the shell exited ({r.status}) and was restarted", "shtick.muted")))
+        shell.print(Text.assemble(("    ", ""), ("· ", "sh_term.faint"), (f"the shell exited ({r.status}) and was restarted", "sh_term.muted")))
     if r.syntax_error is not None:
-        shell.print(Text.assemble(("    ", ""), ("✗ ", "shtick.err.bold"), (r.syntax_error, "shtick.err")))
+        shell.print(Text.assemble(("    ", ""), ("✗ ", "sh_term.err.bold"), (r.syntax_error, "sh_term.err")))
     for text, outcome in report.outcomes:
         show_outcome(shell, text, outcome, indent="    ")
 
 
 def print_summary(shell: Shell, report: testing.Report) -> None:
-    from shtick.output import format_duration
+    from sh_term.output import format_duration
 
     checks, failures = report.checks, report.failures
     if report.passed:
-        shell.print(Text.assemble(("✓ ", "shtick.ok.bold"), (f"{checks} passed", "shtick.ok"),
-                                  (f" · {len(report.cells)} cells · {format_duration(report.duration)}", "shtick.muted")))
+        shell.print(Text.assemble(("✓ ", "sh_term.ok.bold"), (f"{checks} passed", "sh_term.ok"),
+                                  (f" · {len(report.cells)} cells · {format_duration(report.duration)}", "sh_term.muted")))
     else:
-        shell.print(Text.assemble(("✗ ", "shtick.err.bold"), (f"{failures} failed", "shtick.err"), (f" · {checks - min(failures, checks)} passed", "shtick.muted"),
-                                  (f" · {len(report.cells)} cells · {format_duration(report.duration)}", "shtick.muted")))
+        shell.print(Text.assemble(("✗ ", "sh_term.err.bold"), (f"{failures} failed", "sh_term.err"), (f" · {checks - min(failures, checks)} passed", "sh_term.muted"),
+                                  (f" · {len(report.cells)} cells · {format_duration(report.duration)}", "sh_term.muted")))
 
 
 @magic("test", doc="re-run the recorded cells in a fresh session and check their expectations: %test · %test reset",
        usage="Runs every cell since the session started (or since %test reset) in a new session of the same\n"
-             "shell, in a fresh sandbox if the sandbox is on (otherwise in the directory shtick started in),\n"
+             "shell, in a fresh sandbox if the sandbox is on (otherwise in the directory :sh started in),\n"
              "and checks each cell's %expect lines. Cells without expectations still run, as setup.\n\n"
              "%test reset      start recording from here\n%test list       show what would run")
 def m_test(shell: Shell, args: str):
     action = args.strip()
     if action == "reset":
         shell.test_start = len(shell.cells)
-        shell.print(Text("recording tests from the next cell", style="shtick.muted"))
+        shell.print(Text("recording tests from the next cell", style="sh_term.muted"))
         return
     tf = recorded(shell)
     if not tf.cells:
@@ -251,7 +251,7 @@ def m_test(shell: Shell, args: str):
     if action == "list":
         for i, cell in enumerate(tf.cells, 1):
             first = cell.code.split("\n")[0]
-            shell.print(Text.assemble((f"[{i}] ", "shtick.muted"), (first, "shtick.fg"), (f"  {len(cell.expectations)} expectations", "shtick.faint")))
+            shell.print(Text.assemble((f"[{i}] ", "sh_term.muted"), (first, "sh_term.fg"), (f"  {len(cell.expectations)} expectations", "sh_term.faint")))
         return
     if action:
         raise MagicError("usage: %test · %test reset · %test list")
@@ -265,7 +265,7 @@ def m_test(shell: Shell, args: str):
 
 
 @magic("save-test", doc="save the recorded cells and expectations as a test file: %save-test FILE [-f]",
-       usage="Run it later with: shtick test FILE (exits non-zero on failure — for CI).\n"
+       usage="Run it later with: :sh test FILE (exits non-zero on failure — for CI).\n"
              "The file is a shell script: cells are separated by #%% lines, expectations are #% expect comments.")
 def m_save_test(shell: Shell, args: str):
     force, words = take_flags(split_args(args), "-f", "--force")
@@ -282,9 +282,9 @@ def m_save_test(shell: Shell, args: str):
         path.chmod(0o755)
     except OSError as e:
         raise MagicError(f"can't write {words[0]}: {e.strerror or e}") from None
-    from shtick.paths import short_path
+    from sh_term.paths import short_path
 
     n = sum(len(c.expectations) for c in tf.cells)
-    shell.print(Text.assemble(("✓ ", "shtick.ok"), (f"wrote {words[0]}", "shtick.fg"), (f"  {len(tf.cells)} cells · {n} expectations", "shtick.muted")))
-    shell.print(Text(f"in {short_path(path.parent)}", style="shtick.faint"), no_wrap=True, overflow="ellipsis")
-    shell.print(Text(f"run it with: shtick test {words[0]}", style="shtick.faint"))
+    shell.print(Text.assemble(("✓ ", "sh_term.ok"), (f"wrote {words[0]}", "sh_term.fg"), (f"  {len(tf.cells)} cells · {n} expectations", "sh_term.muted")))
+    shell.print(Text(f"in {short_path(path.parent)}", style="sh_term.faint"), no_wrap=True, overflow="ellipsis")
+    shell.print(Text(f"run it with: :sh test {words[0]}", style="sh_term.faint"))

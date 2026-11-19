@@ -1,10 +1,10 @@
-"""Expectations on cells (%expect), re-running them (%test) and test files (`shtick test`).
+"""Expectations on cells (%expect), re-running them (%test) and test files (`:sh test`).
 
 A test file is a shell script with cells and expectations in comments, so `bash file` still
 runs its code:
 
-    #!/usr/bin/env -S shtick test
-    # shtick test · shell: bash · sandbox: off
+    #!/usr/bin/env -S :sh test
+    # :sh test · shell: bash · sandbox: off
     #%% [1]
     echo hello
     #% expect exit 0
@@ -23,10 +23,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
 
-from shtick.engine import CellResult, Session
+from sh_term.engine import CellResult, Session
 
 if TYPE_CHECKING:
-    from shtick.sandbox import Changes
+    from sh_term.sandbox import Changes
 
 USAGE = """\
 exit N · exit != N · exit nonzero · ok · fails
@@ -239,8 +239,8 @@ class TestFile:
 
     def dump(self) -> str:
         out = [
-            "#!/usr/bin/env -S shtick test",
-            f"# shtick test · shell: {self.shell} · sandbox: {self.sandbox}",
+            "#!/usr/bin/env -S :sh test",
+            f"# :sh test · shell: {self.shell} · sandbox: {self.sandbox}",
         ]
         for i, cell in enumerate(self.cells, 1):
             out.append(f"#%% [{i}]" + (f" {cell.label}" if cell.label else ""))
@@ -251,7 +251,7 @@ class TestFile:
         return "\n".join(out) + "\n"
 
 
-_HEADER = re.compile(r"^# shtick test\b(?P<rest>.*)$")
+_HEADER = re.compile(r"^# :sh test\b(?P<rest>.*)$")
 
 
 def load(text: str) -> TestFile:
@@ -326,7 +326,7 @@ class Report:
 
 def run(tf: TestFile, cwd: str, on_cell: Callable[[CellReport], None] | None = None) -> Report:
     """Run a test file's cells in a fresh session and check the expectations."""
-    from shtick.sandbox import Sandbox
+    from sh_term.sandbox import Sandbox
 
     sandbox = Sandbox(cwd, copy=tf.sandbox == "copy") if tf.sandbox in ("empty", "copy") else None
     start = time.perf_counter()

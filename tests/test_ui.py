@@ -5,7 +5,7 @@ from prompt_toolkit.document import Document
 from prompt_toolkit.input.vt100_parser import Vt100Parser
 from prompt_toolkit.keys import Keys
 
-from shtick.ui import ENABLE_MODIFIED_KEYS, dedent_closer, next_indent  # importing shtick.ui registers the key sequences
+from sh_term.ui import ENABLE_MODIFIED_KEYS, dedent_closer, next_indent  # importing sh_term.ui registers the key sequences
 
 
 def parse(data: str):
@@ -58,12 +58,12 @@ def test_closer_already_aligned_is_left_alone():
 
 
 def test_wordmark_is_four_lines_of_half_blocks():
-    from shtick.banner import pixel_rows
+    from sh_term.banner import pixel_rows
 
-    rows = pixel_rows("$HTICK")
+    rows = pixel_rows(":SH")
     assert len(rows) == 4
     assert set("".join(rows)) <= set("█▀▄ ")
-    assert rows[0].startswith(" ▄█▄▄")  # the $ with its stroke above and below
+    assert rows[0].startswith(" ▄▄ ▄▀▀▀▀")
 
 
 def test_closer_finds_its_opener():
@@ -75,7 +75,7 @@ def test_closer_finds_its_opener():
 def test_command_output_hangs_under_the_marker_and_keeps_its_alignment():
     import io
 
-    from shtick.output import BlockWriter, Marker
+    from sh_term.output import BlockWriter, Marker
 
     real = io.StringIO()
     w = BlockWriter(real, Marker())

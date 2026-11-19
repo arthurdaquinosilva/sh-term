@@ -20,7 +20,7 @@ class Terminal:
             os.environ, TERM="xterm-256color", PROMPT_TOOLKIT_NO_CPR="1", VISUAL="", EDITOR="true",
             XDG_CONFIG_HOME=str(tmp_path / "config"), XDG_DATA_HOME=str(tmp_path / "data"),
         )
-        self.child = pexpect.spawn(sys.executable, ["-m", "shtick", *args], env=env, dimensions=(ROWS, COLS), cwd=str(tmp_path))
+        self.child = pexpect.spawn(sys.executable, ["-m", "sh_term", *args], env=env, dimensions=(ROWS, COLS), cwd=str(tmp_path))
         self.wait_for("Type shell code")
 
     def pump(self, seconds=0.2):
@@ -96,7 +96,7 @@ def test_smart_enter_and_shift_enter(term):
     term.wait_for("shift+enter new line")
 
 
-def test_ctrl_c_interrupts_the_cell_not_shtick(term):
+def test_ctrl_c_interrupts_the_cell_not_sh_term(term):
     term.send("keep=yes; sleep 30\r", wait=1.0)
     term.wait_for("Running…")
     term.send("\x03")
@@ -165,9 +165,9 @@ def test_typed_input_is_saved_in_tests(term, tmp_path):
     term.wait_for("     hi world")
     term.send("%expect stdout equals 'hi world'\r")
     term.wait_for("✓ [1]")
-    term.send("%save-test t.shtick\r")
-    term.wait_for("wrote t.shtick")
-    text = (tmp_path / "t.shtick").read_text()
+    term.send("%save-test t.test.sh\r")
+    term.wait_for("wrote t.test.sh")
+    text = (tmp_path / "t.test.sh").read_text()
     assert '#% stdin "world\\n"' in text
 
 

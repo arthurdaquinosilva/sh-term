@@ -7,10 +7,10 @@ import sys
 
 import pytest
 
-from shtick import lint, testing
-from shtick.config import Settings
-from shtick.completer import command_words, parse_options
-from shtick.sandbox import Sandbox
+from sh_term import lint, testing
+from sh_term.config import Settings
+from sh_term.completer import command_words, parse_options
+from sh_term.sandbox import Sandbox
 
 needs_shellcheck = pytest.mark.skipif(lint.shellcheck_path() is None, reason="shellcheck not installed")
 
@@ -132,7 +132,7 @@ def test_trace_lists_commands_separately(any_shell, capfd):
     commands = [t.command for t in cell.trace]
     assert any("in f 1" in c for c in commands) and any("in f 2" in c for c in commands)
     assert "trace ·" in out
-    assert "shtick" not in cell.result.stderr  # the markers never leak into the output
+    assert ":sh" not in cell.result.stderr  # the markers never leak into the output
     assert run(any_shell, "echo after").result.stderr == ""  # tracing is off again
 
 
@@ -239,24 +239,24 @@ def test_expect_test_and_save_test_roundtrip(shell, tmp_path, capfd):
     assert "1 failed · 2 passed" in out
     assert not (tmp_path / "note.txt").exists()  # the test ran in its own sandbox
     shell.cells[-1].expectations.pop()  # drop `exit 3`
-    shell.run_cell("%save-test t.shtick")
-    text = (tmp_path / "t.shtick").read_text()
+    shell.run_cell("%save-test t.test.sh")
+    text = (tmp_path / "t.test.sh").read_text()
     assert "sandbox: empty" in text and "#% expect file exists note.txt" in text
     tf = testing.load(text)
     assert [c.code for c in tf.cells] == ["greeting=hi", 'echo "$greeting there" > note.txt; cat note.txt']
-    shell.run_cell("%save-test t.shtick")
+    shell.run_cell("%save-test t.test.sh")
     assert "exists" in capfd.readouterr().out
-    # `shtick test` exits 0 when everything passes, 1 when something fails
-    cli = [sys.executable, "-m", "shtick", "test"]
-    assert subprocess.run([*cli, str(tmp_path / "t.shtick")], capture_output=True).returncode == 0
-    (tmp_path / "bad.shtick").write_text(text.replace("hi there", "bye"))
-    proc = subprocess.run([*cli, str(tmp_path / "bad.shtick")], capture_output=True, text=True)
+    # `:sh test` exits 0 when everything passes, 1 when something fails
+    cli = [sys.executable, "-m", "sh_term", "test"]
+    assert subprocess.run([*cli, str(tmp_path / "t.test.sh")], capture_output=True).returncode == 0
+    (tmp_path / "bad.test.sh").write_text(text.replace("hi there", "bye"))
+    proc = subprocess.run([*cli, str(tmp_path / "bad.test.sh")], capture_output=True, text=True)
     assert proc.returncode == 1 and "1 failed" in proc.stdout
 
 
 def test_test_file_runs_with_bash_too(tmp_path):
     tf = testing.TestFile([testing.TestCell("x=1", []), testing.TestCell('echo "x=$x"', ["stdout equals x=1"])])
-    path = tmp_path / "t.shtick"
+    path = tmp_path / "t.test.sh"
     path.write_text(tf.dump())
     assert subprocess.run(["bash", str(path)], capture_output=True, text=True).stdout == "x=1\n"
 
@@ -333,11 +333,11 @@ def test_completion(shell, tmp_path):
     from prompt_toolkit.completion import CompleteEvent
     from prompt_toolkit.document import Document
 
-    from shtick.completer import ShtickCompleter
+    from sh_term.completer import ShTermCompleter
 
     (tmp_path / "notes.txt").write_text("")
     run(shell, "myfunc() { :; }; MYVAR=1")
-    c = ShtickCompleter(shell)
+    c = ShTermCompleter(shell)
 
     def complete(text):
         return [x.display_text for x in c.get_completions(Document(text, len(text)), CompleteEvent(completion_requested=True))]
@@ -367,7 +367,7 @@ def test_flag_parsing():
 def test_flag_hints_only_while_on_a_flag():
     from prompt_toolkit.document import Document
 
-    from shtick.completer import Flag, FlagHinter
+    from sh_term.completer import Flag, FlagHinter
 
     hinter = FlagHinter(lambda: None)
     hinter.cache["rm"] = {"-r": Flag(("-r",), "", "Recursive."), "-f": Flag(("-f",), "", "Force.")}
@@ -397,12 +397,12 @@ def test_command_words():
 
 
 def test_vars_shows_changes(any_shell, capfd):
-    run(any_shell, 'x=41; multi="a\nb"; f() { echo hi; }; unset SHTICK_TEST_VAR')
+    run(any_shell, 'x=41; multi="a\nb"; f() { echo hi; }; unset SH_TERM_TEST_VAR')
     capfd.readouterr()
     any_shell.run_cell("%vars")
     out = capfd.readouterr().out
-    assert "+ x=" in out and "+ multi=" in out and "− SHTICK_TEST_VAR" in out
-    assert "RANDOM" not in out and "__shtick" not in out
+    assert "+ x=" in out and "+ multi=" in out and "− SH_TERM_TEST_VAR" in out
+    assert "RANDOM" not in out and "__sh_term" not in out
     if any_shell.session.kind in ("bash", "zsh"):
         assert "+ f()" in out
     else:
@@ -410,7 +410,7 @@ def test_vars_shows_changes(any_shell, capfd):
 
 
 def test_vars_redefined_function(tmp_path, monkeypatch, capfd):
-    from shtick.shell import Shell
+    from sh_term.shell import Shell
 
     monkeypatch.chdir(tmp_path)
     sh = Shell(Settings(startup=["greet() { echo hi; }"]), cwd=str(tmp_path))
@@ -505,25 +505,25 @@ def test_test_file_replays_stdin(tmp_path):
 
 
 @needs_shellcheck
-def test_shtick_test_lint(tmp_path):
+def test_sh_term_test_lint(tmp_path):
     tf = testing.TestFile([testing.TestCell("echo $1", ["exit 0"])])
-    (tmp_path / "t.shtick").write_text(tf.dump())
-    proc = subprocess.run([sys.executable, "-m", "shtick", "test", "--lint", str(tmp_path / "t.shtick")], capture_output=True, text=True)
+    (tmp_path / "t.test.sh").write_text(tf.dump())
+    proc = subprocess.run([sys.executable, "-m", "sh_term", "test", "--lint", str(tmp_path / "t.test.sh")], capture_output=True, text=True)
     assert proc.returncode == 0 and "SC2086" in proc.stdout and "shellcheck: 1 findings" in proc.stdout
 
 
 def test_env_changes(shell, capfd):
-    run(shell, 'export SHTICK_NEW=1; PATH="/opt/shtick-test:$PATH"; unset SHTICK_TEST_VAR; not_exported=1')
+    run(shell, 'export SH_TERM_NEW=1; PATH="/opt/sh-term-test:$PATH"; unset SH_TERM_TEST_VAR; not_exported=1')
     capfd.readouterr()
     shell.run_cell("%env")
     out = capfd.readouterr().out
-    assert "+ SHTICK_NEW=1" in out and "− SHTICK_TEST_VAR" in out and "~ PATH  +/opt/shtick-test" in out
+    assert "+ SH_TERM_NEW=1" in out and "− SH_TERM_TEST_VAR" in out and "~ PATH  +/opt/sh-term-test" in out
     assert "not_exported" not in out
 
 
 def test_config_save(tmp_path, monkeypatch, capfd):
-    from shtick.config import Profile, load_settings
-    from shtick.shell import Shell
+    from sh_term.config import Profile, load_settings
+    from sh_term.shell import Shell
 
     monkeypatch.chdir(tmp_path)
     profile = Profile("t", tmp_path / "config", tmp_path / "data")
@@ -549,7 +549,7 @@ def test_command_lines_split_multi_line_input(shell, capfd):
 
 @pytest.mark.parametrize("shell_name", [s for s in ("bash", "zsh") if shutil.which(s)])
 def test_history_builtin_lists_the_cells(tmp_path, shell_name):
-    from shtick.shell import Shell
+    from sh_term.shell import Shell
 
     sh = Shell(Settings(shell=shell_name), cwd=str(tmp_path))
     try:

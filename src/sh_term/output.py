@@ -1,4 +1,4 @@
-"""Cell output hanging under a `⎿` marker (querky's style), plus a live 'running' spinner."""
+"""Cell output hanging under a `⎿` marker (:sql's style), plus a live 'running' spinner."""
 
 from __future__ import annotations
 
@@ -74,7 +74,7 @@ class Spinner:
         if not self.enabled:
             return
         self.started = time.perf_counter()
-        self._thread = threading.Thread(target=self._run, name="shtick-spinner", daemon=True)
+        self._thread = threading.Thread(target=self._run, name="sh-term-spinner", daemon=True)
         self._thread.start()
 
     def _run(self) -> None:

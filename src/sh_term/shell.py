@@ -17,20 +17,20 @@ from rich.syntax import Syntax
 from rich.table import Table
 from rich.text import Text
 
-from shtick import trace as tracing
-from shtick.config import Profile, Settings
-from shtick.engine import CellResult, Session, ShellNotFound
-from shtick.history import HistoryManager
-from shtick.magics import MAGICS, MagicError
-from shtick.paths import fit_path, short_path
-from shtick.output import BlockWriter, LineInput, Marker, Rail, RailState, Spinner, format_duration
-from shtick.syntax import MAGIC_RE, is_unfinished
-from shtick.theme import PALETTES, Theme, get_theme
+from sh_term import trace as tracing
+from sh_term.config import Profile, Settings
+from sh_term.engine import CellResult, Session, ShellNotFound
+from sh_term.history import HistoryManager
+from sh_term.magics import MAGICS, MagicError
+from sh_term.paths import fit_path, short_path
+from sh_term.output import BlockWriter, LineInput, Marker, Rail, RailState, Spinner, format_duration
+from sh_term.syntax import MAGIC_RE, is_unfinished
+from sh_term.theme import PALETTES, Theme, get_theme
 
 if TYPE_CHECKING:
-    from shtick.sandbox import Changes, Sandbox
-    from shtick.scripts import Script
-    from shtick.testing import Expectation
+    from sh_term.sandbox import Changes, Sandbox
+    from sh_term.scripts import Script
+    from sh_term.testing import Expectation
 
 
 BODY_COMMANDS = {"trace", "compare"}  # commands that take code on the following lines
@@ -127,7 +127,7 @@ class Shell:
 
     def _run_startup(self) -> None:
         """Every new session (start, restart, %shell, after the shell exited): startup lines, %vars baseline."""
-        from shtick.magics.inspect import env_snapshot, snapshot
+        from sh_term.magics.inspect import env_snapshot, snapshot
 
         if self.settings.aliases:
             self._define_aliases()
@@ -142,7 +142,7 @@ class Shell:
 
     def _define_aliases(self, refresh: bool = False) -> None:
         """The `aliases` setting: define the interactive shell's aliases in this session (before `startup`)."""
-        from shtick import aliases
+        from sh_term import aliases
 
         try:
             found = aliases.load(self.settings.aliases, refresh)
@@ -193,10 +193,10 @@ class Shell:
         self.ui.print(renderable, end=end, **kwargs)
 
     def warn(self, message: str) -> None:
-        self.print(Text.assemble(("⚠ ", "shtick.warn"), (message, "shtick.fg")))
+        self.print(Text.assemble(("⚠ ", "sh_term.warn"), (message, "sh_term.fg")))
 
     def error(self, message: str) -> None:
-        self.print(Text.assemble(("✗ ", "shtick.err.bold"), (message, "shtick.fg")))
+        self.print(Text.assemble(("✗ ", "sh_term.err.bold"), (message, "sh_term.fg")))
 
     def _ansi(self, *parts: tuple[str, str]) -> str:
         with self.ui.capture() as cap:
@@ -210,7 +210,7 @@ class Shell:
             if self.marker.used:
                 self.print()
             return
-        self.print(Text.assemble((self.marker.take_plain(), "shtick.faint"), *parts))
+        self.print(Text.assemble((self.marker.take_plain(), "sh_term.faint"), *parts))
 
     @contextmanager
     def block(self) -> Iterator[None]:
@@ -307,14 +307,14 @@ class Shell:
         return result
 
     def echo(self, source: str, label: str = "") -> None:
-        self.marker = Marker(self._ansi(("  ⎿  ", "shtick.faint")))  # a new block starts under this input
+        self.marker = Marker(self._ansi(("  ⎿  ", "sh_term.faint")))  # a new block starts under this input
         grid = Table.grid(padding=0)
         grid.add_column(width=2, no_wrap=True)
         grid.add_column(ratio=1)
         if MAGIC_RE.match(source):
             name, _, rest = source.partition(" ")
             first, nl, body = rest.partition("\n")
-            head = Text.assemble((name, "shtick.accent.bold"), (" " + first if first else "", "shtick.fg"))
+            head = Text.assemble((name, "sh_term.accent.bold"), (" " + first if first else "", "sh_term.fg"))
             content: RenderableType = head
             if nl:
                 content = Table.grid()
@@ -322,9 +322,9 @@ class Shell:
                 content.add_row(Syntax(body, "bash", theme=self.theme.syntax_theme, background_color="default", word_wrap=True))
         else:
             content = Syntax(source, "bash", theme=self.theme.syntax_theme, background_color="default", word_wrap=True)
-        grid.add_row(Text(">", style="shtick.muted"), content)
+        grid.add_row(Text(">", style="sh_term.muted"), content)
         if label:
-            self.print(Text.assemble(("  ", ""), ("▸ ", "shtick.accent"), (label, "shtick.label")))
+            self.print(Text.assemble(("  ", ""), ("▸ ", "sh_term.accent"), (label, "sh_term.label")))
         self.print(grid)
 
     def run_setup(self, code: str, label: str) -> CellResult:
@@ -366,15 +366,15 @@ class Shell:
 
         before = self.sandbox.snapshot() if self.sandbox is not None else None
         if not echo:
-            self.marker = Marker(self._ansi(("  ⎿  ", "shtick.faint")))
-        start_err, _, reset = self._ansi(("\x00", "shtick.stderr")).partition("\x00")
+            self.marker = Marker(self._ansi(("  ⎿  ", "sh_term.faint")))
+        start_err, _, reset = self._ansi(("\x00", "sh_term.stderr")).partition("\x00")
         state = RailState(self.marker, {"err": (start_err, reset)})
         spinner = Spinner(
             sys.__stdout__,
             state,
             lambda frame, elapsed: self._ansi(
-                (frame + " ", "shtick.accent"), ("Running…", "shtick.accent"),
-                (f" ({format_duration(elapsed)} · ctrl+c to interrupt)", "shtick.faint"),
+                (frame + " ", "sh_term.accent"), ("Running…", "sh_term.accent"),
+                (f" ({format_duration(elapsed)} · ctrl+c to interrupt)", "sh_term.faint"),
             ),
         )
         rail = Rail(sys.__stdout__, state, spinner)
@@ -399,7 +399,7 @@ class Shell:
         run_code = tracing.wrap(code, self.session.kind) if trace else code
 
         interactive_input = sys.__stdin__.isatty()
-        start_in, _, reset_in = self._ansi(("\x00", "shtick.input")).partition("\x00")
+        start_in, _, reset_in = self._ansi(("\x00", "sh_term.input")).partition("\x00")
         line_input = LineInput(rail, (start_in, reset_in))
         typed: list[bytes] = []
 
@@ -458,7 +458,7 @@ class Shell:
     def _show_syntax_error(self, message: str) -> None:
         self.rail_line()
         for line in message.split("\n"):
-            self.print(Text.assemble((self.marker.take_plain(), "shtick.faint"), (line, "shtick.stderr")))
+            self.print(Text.assemble((self.marker.take_plain(), "sh_term.faint"), (line, "sh_term.stderr")))
         self.rail_line()
 
     def _show_trace(self, cell: Cell, wrote: bool) -> None:
@@ -466,18 +466,18 @@ class Shell:
             return
         if not wrote:
             self.rail_line()
-        self.rail_line(("trace", "shtick.muted.bold"), (f" · {len(cell.trace)} commands", "shtick.faint"))
+        self.rail_line(("trace", "sh_term.muted.bold"), (f" · {len(cell.trace)} commands", "sh_term.faint"))
         locations = [t.location(cell.result.number, lambda run, line: self.origin(run, line, cell.result.number)) for t in cell.trace]
         width = max(len(loc) for loc in locations)
         base = min(t.depth for t in cell.trace)
         for t, loc in zip(cell.trace, locations):
             indent = "  " * (t.depth - base)
             parts: list[tuple[str, str]] = [
-                (loc.rjust(width), "shtick.trace.loc"), ("  ", ""),
-                (indent, "shtick.trace.depth"), (t.command, "shtick.trace"),
+                (loc.rjust(width), "sh_term.trace.loc"), ("  ", ""),
+                (indent, "sh_term.trace.depth"), (t.command, "sh_term.trace"),
             ]
             if t.function:
-                parts.append((f"  ({t.function})", "shtick.faint"))
+                parts.append((f"  ({t.function})", "sh_term.faint"))
             self.rail_line(*parts)
         self.rail_line()
 
@@ -486,34 +486,34 @@ class Shell:
             return
         if not wrote:
             self.rail_line()
-        parts: list[tuple[str, str]] = [("sandbox", "shtick.muted.bold"), ("  ", "")]
-        for mark, style, paths in (("+", "shtick.added", changes.added), ("~", "shtick.modified", changes.modified), ("−", "shtick.deleted", changes.deleted)):
+        parts: list[tuple[str, str]] = [("sandbox", "sh_term.muted.bold"), ("  ", "")]
+        for mark, style, paths in (("+", "sh_term.added", changes.added), ("~", "sh_term.modified", changes.modified), ("−", "sh_term.deleted", changes.deleted)):
             for p in paths:
-                parts += [(f"{mark} ", style), (p, "shtick.fg"), ("  ", "")]
+                parts += [(f"{mark} ", style), (p, "sh_term.fg"), ("  ", "")]
         self.rail_line(*parts)
         self.rail_line()
 
     def footer(self, cell: Cell) -> None:
         r = cell.result
-        parts: list[tuple[str, str]] = [(self.marker.take_plain(), "shtick.faint")]
-        sep = (" · ", "shtick.faint")
+        parts: list[tuple[str, str]] = [(self.marker.take_plain(), "sh_term.faint")]
+        sep = (" · ", "sh_term.faint")
         if r.syntax_error is not None:
-            parts += [("✗ ", "shtick.err.bold"), ("syntax error", "shtick.err"), (" · not run", "shtick.faint")]
+            parts += [("✗ ", "sh_term.err.bold"), ("syntax error", "sh_term.err"), (" · not run", "sh_term.faint")]
         elif r.died:
             how = f"killed by signal {-r.died_status}" if (r.died_status or 0) < 0 else f"exit {r.died_status}"
-            parts += [("✗ ", "shtick.err.bold"), ("shell exited", "shtick.err"), sep, (how, "shtick.muted"), sep,
-                      (format_duration(r.duration), "shtick.muted"), sep, ("session restarted, state lost", "shtick.warn")]
+            parts += [("✗ ", "sh_term.err.bold"), ("shell exited", "sh_term.err"), sep, (how, "sh_term.muted"), sep,
+                      (format_duration(r.duration), "sh_term.muted"), sep, ("session restarted, state lost", "sh_term.warn")]
         else:
             if r.interrupted:
-                parts += [("✗ ", "shtick.err.bold"), ("interrupted", "shtick.err"), sep]
+                parts += [("✗ ", "sh_term.err.bold"), ("interrupted", "sh_term.err"), sep]
             elif r.exit == 0:
-                parts += [("✓ ", "shtick.ok")]
+                parts += [("✓ ", "sh_term.ok")]
             else:
-                parts += [("✗ ", "shtick.err.bold")]
-            parts += [(f"exit {r.exit}", "shtick.muted" if r.exit == 0 else "shtick.err"), sep, (format_duration(r.duration), "shtick.muted")]
+                parts += [("✗ ", "sh_term.err.bold")]
+            parts += [(f"exit {r.exit}", "sh_term.muted" if r.exit == 0 else "sh_term.err"), sep, (format_duration(r.duration), "sh_term.muted")]
             tail: list[tuple[str, str]] = []
             if self.sandbox is not None:
-                tail = [sep, ("sandbox", "shtick.muted")] if self.sandbox.contains(r.cwd) else [sep, ("outside the sandbox", "shtick.warn")]
+                tail = [sep, ("sandbox", "sh_term.muted")] if self.sandbox.contains(r.cwd) else [sep, ("outside the sandbox", "sh_term.warn")]
             used = Text.assemble(*parts, *tail).cell_len + 3
             path = r.cwd or self.session.cwd
             if self.sandbox is not None and self.sandbox.contains(path):
@@ -522,5 +522,5 @@ class Shell:
                 tail = []
             else:
                 shown = short_path(path)
-            parts += [sep, (fit_path(shown, self.width - used), "shtick.muted"), *tail]
+            parts += [sep, (fit_path(shown, self.width - used), "sh_term.muted"), *tail]
         self.print(Text.assemble(*parts), no_wrap=True, overflow="ellipsis")

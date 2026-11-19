@@ -1,4 +1,4 @@
-"""Record a real shtick session in a pseudo-terminal and save it as SVG screenshots.
+"""Record a real :sh session in a pseudo-terminal and save it as SVG screenshots.
 
     python scripts/screenshot.py   # writes docs/assets/cover.svg and docs/assets/demo.svg
 
@@ -64,9 +64,9 @@ def capture(script: list[tuple[str, float]]) -> pyte.Screen:
             (project / name).write_text(text)
         env = dict(
             os.environ, TERM="xterm-256color", COLORTERM="truecolor", PROMPT_TOOLKIT_NO_CPR="1", HOME=home, USER="arthur",
-            SHTICK_THEME="pitch", XDG_CONFIG_HOME=f"{home}/config", XDG_DATA_HOME=f"{home}/data", LC_ALL="C", LANG="C.UTF-8",
+            SH_TERM_THEME="pitch", XDG_CONFIG_HOME=f"{home}/config", XDG_DATA_HOME=f"{home}/data", LC_ALL="C", LANG="C.UTF-8",
         )
-        child = pexpect.spawn(sys.executable, ["-m", "shtick"], env=env, dimensions=(ROWS, COLS), cwd=str(project))
+        child = pexpect.spawn(sys.executable, ["-m", "sh_term"], env=env, dimensions=(ROWS, COLS), cwd=str(project))
 
         def pump(seconds: float) -> None:
             end = time.time() + seconds
@@ -102,7 +102,7 @@ def save(screen: pyte.Screen, name: str) -> None:
     console = Console(record=True, width=COLS, force_terminal=True, color_system="truecolor", file=open(os.devnull, "w"))
     console.print(to_text(screen), end="", overflow="crop", no_wrap=True)
     target = ROOT / "docs" / "assets" / name
-    console.save_svg(str(target), title="shtick", theme=THEME)
+    console.save_svg(str(target), title=":sh", theme=THEME)
     print(f"wrote {target}")
 
 

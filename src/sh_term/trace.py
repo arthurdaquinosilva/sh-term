@@ -2,7 +2,7 @@
 
 Each traced command is printed by the shell as
 
-    ++<US>shtick<US>cell-3.sh<US>4<US>greet<US><US> echo 'hi a'
+    ++<US>:sh<US>cell-3.sh<US>4<US>greet<US><US> echo 'hi a'
 
 (US = \\x1f; bash repeats the leading `+` for nesting, zsh reports depth in its own field). The
 splitter pulls those lines out of the output streams; everything else is passed through.
@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from typing import Callable
 
 US = "\x1f"
-MARK = f"{US}shtick{US}"
+MARK = f"{US}:sh{US}"
 
 PS4 = {
     # `-` defaults: PS4 is expanded under the cell's own options, including set -u
@@ -26,10 +26,10 @@ PS4 = {
     "sh": f"+{MARK}{US}${{LINENO-}}{US}{US}{US} ",
 }
 
-UNWRAP = "{ set +x; } 2>/dev/null; PS4=${__shtick_ps4-}; unset __shtick_ps4"
+UNWRAP = "{ set +x; } 2>/dev/null; PS4=${__sh_term_ps4-}; unset __sh_term_ps4"
 
 _LINE = re.compile(rf"(?P<plus>\+*){MARK}(?P<file>[^{US}]*){US}(?P<line>\d*){US}(?P<func>[^{US}]*){US}(?P<depth>\d*){US} ?(?P<cmd>.*)")
-_DRIVER = re.compile(r"^(command printf [0-9a-f]{16}|'?command'? 'printf'|__shtick_status\b|set \+x$|\. .*cell-\d+\.sh$)")
+_DRIVER = re.compile(r"^(command printf [0-9a-f]{16}|'?command'? 'printf'|__sh_term_status\b|set \+x$|\. .*cell-\d+\.sh$)")
 
 
 @dataclass
@@ -61,7 +61,7 @@ class TraceLine:
 def wrap(code: str, kind: str) -> str:
     """Turn tracing on in the cell's first line, so line numbers stay the same."""
     ps4 = PS4.get(kind, PS4["sh"])
-    return f"__shtick_ps4=${{PS4-}}; PS4='{ps4}'; set -x; {code}"
+    return f"__sh_term_ps4=${{PS4-}}; PS4='{ps4}'; set -x; {code}"
 
 
 def parse(text: str) -> TraceLine | None:

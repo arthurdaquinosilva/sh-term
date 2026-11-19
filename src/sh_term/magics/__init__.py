@@ -156,6 +156,6 @@ def split_args(args: str) -> list[str]:
         raise MagicError(f"can't parse arguments: {e}") from None
 
 
-from shtick.magics import checks, core, history, inspect, scripts  # noqa: E402
+from sh_term.magics import checks, core, history, inspect, scripts  # noqa: E402
 
 BUILTIN_MODULES = (core, scripts, checks, history, inspect)  # importing them registers the commands

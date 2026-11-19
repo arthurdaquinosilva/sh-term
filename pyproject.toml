@@ -3,7 +3,7 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "shtick"
+name = "sh-term"
 version = "0.2.0"
 description = "A playground for writing and testing shell scripts — run cells in a persistent shell, trace, lint, sandbox and assert."
 readme = "README.md"
@@ -40,13 +40,14 @@ dependencies = [
 dev = ["pytest", "pytest-timeout", "pyte", "pexpect", "pyflakes", "build", "twine"]
 
 [project.urls]
-Homepage = "https://github.com/arthurdaquinosilva/shtick"
-Documentation = "https://github.com/arthurdaquinosilva/shtick/tree/main/docs"
-Issues = "https://github.com/arthurdaquinosilva/shtick/issues"
-Changelog = "https://github.com/arthurdaquinosilva/shtick/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/arthurdaquinosilva/sh-term"
+Documentation = "https://github.com/arthurdaquinosilva/sh-term/tree/main/docs"
+Issues = "https://github.com/arthurdaquinosilva/sh-term/issues"
+Changelog = "https://github.com/arthurdaquinosilva/sh-term/blob/main/CHANGELOG.md"
 
 [project.scripts]
-shtick = "shtick.cli:main"
+":sh" = "sh_term.cli:main"
+sh-term = "sh_term.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

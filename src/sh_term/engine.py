@@ -5,10 +5,10 @@ How a cell runs
 The shell is started non-interactively (`<shell> -s`) in its own process group and reads
 commands from its stdin. Each cell is written to a file and the engine sends one driver line:
 
-    { printf 'TOKEN\\0started\\0' >STATUS; . CELL; } <STDIN; __shtick_rc=$?; __shtick_in=; __shtick_pending=; printf 'TOKEN\\0%s\\0%s\\0' "$__shtick_rc" "$PWD" >STATUS
+    { printf 'TOKEN\\0started\\0' >STATUS; . CELL; } <STDIN; __sh_term_rc=$?; __sh_term_in=; __sh_term_pending=; printf 'TOKEN\\0%s\\0%s\\0' "$__sh_term_rc" "$PWD" >STATUS
 
 * The cell file's first line (so line numbers don't move) marks the cell as running and runs
-  `__shtick_status N`, which makes `$?` inside the cell equal the previous cell's exit status.
+  `__sh_term_status N`, which makes `$?` inside the cell equal the previous cell's exit status.
 * stdout and stderr are pipes, read as they arrive; the exit status and `$PWD` come back on a
   named FIFO tagged with a per-cell random token, so no bookkeeping shows up in the output.
 * The cell's stdin is a FIFO of its own. The engine keeps it open until the shell reports
@@ -111,16 +111,16 @@ def shell_argv(path: str) -> list[str]:
 # Inside a cell, Ctrl+C returns from it. Between cells (the driver line, before the cell file is sourced),
 # a `return` would fail in bash and exit zsh, so the interrupt is remembered and the cell's first line
 # honours it.
-INT_TRAP = """trap 'if [ -n "${__shtick_in-}" ]; then return 130 2>/dev/null; else __shtick_pending=1; fi # shtick' INT"""
-CELL_PREFIX = '__shtick_in=1; if [ -n "${__shtick_pending-}" ]; then __shtick_pending=; return 130; fi; __shtick_status {status}; '
+INT_TRAP = """trap 'if [ -n "${__sh_term_in-}" ]; then return 130 2>/dev/null; else __sh_term_pending=1; fi # :sh' INT"""
+CELL_PREFIX = '__sh_term_in=1; if [ -n "${__sh_term_pending-}" ]; then __sh_term_pending=; return 130; fi; __sh_term_status {status}; '
 
 BOOT = {
-    "common": f"{INT_TRAP}\n__shtick_status() {{ return \"$1\"; }}\n",
+    "common": f"{INT_TRAP}\n__sh_term_status() {{ return \"$1\"; }}\n",
     # After a trap returned from an interrupted cell, bash 5 won't run the trap from builtin-only
     # loops until it forks again, and bash 3.2 until the trap is set again. Reinstall ours only.
     "bash": (
         "shopt -s expand_aliases\n"
-        f"__shtick_reset_int() {{ case \"$(trap -p INT)\" in *'# shtick'*) trap - INT; {INT_TRAP};; esac; }}\n"
+        f"__sh_term_reset_int() {{ case \"$(trap -p INT)\" in *'# :sh'*) trap - INT; {INT_TRAP};; esac; }}\n"
     ),
     "zsh": "",
     "dash": "",
@@ -169,7 +169,7 @@ class Session:
         self.tty = tty
         self.env = clean_env(env)
         self.cwd = os.path.abspath(cwd or os.getcwd())
-        self.dir = Path(tempfile.mkdtemp(prefix="shtick-"))
+        self.dir = Path(tempfile.mkdtemp(prefix="sh-term-"))
         self.status_path = self.dir / "status"
         self.stdin_path = self.dir / "stdin"
         os.mkfifo(self.status_path, 0o600)
@@ -348,10 +348,10 @@ class Session:
         else:
             redirect = f"<{quote(str(self.stdin_path))}"
         status = quote(str(self.status_path))
-        prefix = "__shtick_reset_int; " if self._after_interrupt and self.kind == "bash" else ""
+        prefix = "__sh_term_reset_int; " if self._after_interrupt and self.kind == "bash" else ""
         line = (
             f"{prefix}{{ command printf '{token}\\0started\\0' >{status}; . {quote(str(path))}; }} {redirect}; "
-            f"__shtick_rc=$?; __shtick_in=; __shtick_pending=; command printf '{token}\\0%s\\0%s\\0' \"$__shtick_rc\" \"$PWD\" >{status}\n"
+            f"__sh_term_rc=$?; __sh_term_in=; __sh_term_pending=; command printf '{token}\\0%s\\0%s\\0' \"$__sh_term_rc\" \"$PWD\" >{status}\n"
         )
         self._after_interrupt = False
         self._interrupts = 0

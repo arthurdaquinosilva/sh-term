@@ -1,4 +1,4 @@
-"""Session-aware cell history stored in SQLite, with ember-style ranges (4-6, ~1/, 2/1-3)."""
+"""Session-aware cell history stored in SQLite, with :py-style ranges (4-6, ~1/, 2/1-3)."""
 
 from __future__ import annotations
 

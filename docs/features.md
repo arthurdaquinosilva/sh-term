@@ -19,7 +19,7 @@ Everything you type runs in **one long-lived shell process** (bash by default), 
 
 ### When the shell ends
 
-`exit`, `exec cmd`, a failing command under `set -e`, or a crash end the shell process. shtick reports it —
+`exit`, `exec cmd`, a failing command under `set -e`, or a crash end the shell process. :sh reports it —
 
 ```text
      ✗ shell exited · exit 1 · 3ms · session restarted, state lost
@@ -31,7 +31,7 @@ Everything you type runs in **one long-lived shell process** (bash by default), 
 
 A running cell can read from you: type a line and press Enter (`read`, `cat`, a script asking for confirmation). What you type shows in the cell's output in the accent color; Backspace and Ctrl+U edit the line; **Ctrl+D** ends the cell's input (`cat` finishes). Cells that don't read never see what you type. What you typed is kept with the cell, so `%test` and saved tests give the cell the same input again.
 
-A `%command` on its own line after shell code runs as its own step, so `shtick -c` and pasted snippets can mix both (lines inside a heredoc are left alone).
+A `%command` on its own line after shell code runs as its own step, so `:sh -c` and pasted snippets can mix both (lines inside a heredoc are left alone).
 
 **Ctrl+C** interrupts the running cell — the rest of the cell is skipped and the session survives. If the cell ignores it (`trap '' INT`), press Ctrl+C again to kill the session.
 
@@ -52,10 +52,10 @@ Cells run with stdout and stderr on pipes, like a script in a pipeline. Some pro
 
 ### vi mode
 
-Start with `shtick --vi`, switch with `%vi` (`%emacs` goes back), or keep it with `%vi --save` (writes `editing_mode = "vi"` to `config.toml`).
+Start with `:sh --vi`, switch with `%vi` (`%emacs` goes back), or keep it with `%vi --save` (writes `editing_mode = "vi"` to `config.toml`).
 
 - The mode line shows `[INSERT]`, `[NORMAL]`, `[VISUAL]` or `[REPLACE]`, and the cursor changes shape where the terminal supports it.
-- Esc leaves insert mode (quickly — shtick doesn't wait for more of an escape sequence), also when it closes the completion menu.
+- Esc leaves insert mode (quickly — :sh doesn't wait for more of an escape sequence), also when it closes the completion menu.
 - In normal mode the usual motions and operators work (`w b e 0 $ dd cw x p u` …), **Enter runs the cell**, `j`/`k` move through history, `/` and `?` search it, and **`v` opens the cell in `$EDITOR`** like in bash and zsh. With an empty input the key bar reminds you: `HISTORY: k j /  |  EDITOR: v`.
 - Each new prompt starts in insert mode.
 
@@ -97,11 +97,11 @@ deploy.sh  7 commands  args: staging
 
 At a breakpoint, the session holds the script's state so far: look at it with `%vars`, `%env` or any shell code, then `%next` or `%run` to go on. Breakpoints show as `●` in `%script`.
 
-`shtick deploy.sh staging` opens a script right away. Remember that the script runs *in* the session: an `exit` in it ends the session, and `set -e` stays on afterwards.
+`:sh deploy.sh staging` opens a script right away. Remember that the script runs *in* the session: an `exit` in it ends the session, and `set -e` stays on afterwards.
 
 ### Watching a script
 
-`%watch build.sh [args…]` runs a script and runs it again every time you save it — keep shtick open next to your editor. Each run is a **new process** of the session's shell (`bash build.sh args`), so runs start clean and an `exit` in the script doesn't end your session. After each run, shellcheck's findings for the file are counted (`%lint build.sh` for details). Press `q` or Ctrl+C to stop.
+`%watch build.sh [args…]` runs a script and runs it again every time you save it — keep :sh open next to your editor. Each run is a **new process** of the session's shell (`bash build.sh args`), so runs start clean and an `exit` in the script doesn't end your session. After each run, shellcheck's findings for the file are counted (`%lint build.sh` for details). Press `q` or Ctrl+C to stop.
 
 ## Tracing
 
@@ -149,7 +149,7 @@ Cells often use variables set in earlier cells, so `SC2034` (assigned but unused
 ```text
 > %sandbox on --copy
 sandbox on  a copy of ~/project
-in /var/folders/…/shtick-sandbox-k2x9 · deleted by %sandbox off
+in /var/folders/…/sh-term-sandbox-k2x9 · deleted by %sandbox off
 
 > ./build.sh && rm -rf tmp
 │
@@ -158,7 +158,7 @@ in /var/folders/…/shtick-sandbox-k2x9 · deleted by %sandbox off
 ╰─ ✓ exit 0 · 212ms · sandbox
 ```
 
-`%sandbox on` moves the session into an empty temporary directory; `--copy` makes it a copy of the current one. After every cell, shtick lists what changed: **+** created, **~** modified, **−** deleted (new directories are listed once, not file by file). `%sandbox off` goes back to the original directory and deletes the sandbox. `%sandbox status` shows where it is.
+`%sandbox on` moves the session into an empty temporary directory; `--copy` makes it a copy of the current one. After every cell, :sh lists what changed: **+** created, **~** modified, **−** deleted (new directories are listed once, not file by file). `%sandbox off` goes back to the original directory and deletes the sandbox. `%sandbox status` shows where it is.
 
 It's a *working-directory* sandbox, meant for relative paths: it isn't a security boundary. Absolute paths, `cd ..` and `$HOME` reach the real filesystem, and the footer warns `outside the sandbox` when a cell leaves it.
 
@@ -208,18 +208,18 @@ Quote arguments with spaces; `\n` and `\t` describe multi-line text (`stdout equ
 ✗ 1 failed · 2 passed · 4 cells · 340ms
 ```
 
-Cells without expectations still run, as setup. If any recorded cell ran in the sandbox, the whole test runs in a new sandbox (a copy of the original directory if the sandbox was a copy), so re-running never touches your files. Otherwise it runs in the directory shtick started in. Setup that shtick did for you, like `%open`'s arguments, is recorded too.
+Cells without expectations still run, as setup. If any recorded cell ran in the sandbox, the whole test runs in a new sandbox (a copy of the original directory if the sandbox was a copy), so re-running never touches your files. Otherwise it runs in the directory :sh started in. Setup that :sh did for you, like `%open`'s arguments, is recorded too.
 
-**`%save-test FILE`** writes the recorded cells and expectations to a file, and **`shtick test FILE…`** runs it without the UI — exit status 0 when everything passes, 1 otherwise, so it fits CI:
+**`%save-test FILE`** writes the recorded cells and expectations to a file, and **`:sh test FILE…`** runs it without the UI — exit status 0 when everything passes, 1 otherwise, so it fits CI:
 
 ```sh
-shtick test tests/*.shtick          # every cell and check
-shtick test -q tests/*.shtick       # only failures and the summary
-shtick test --shell dash t.shtick   # against another shell
-shtick test --lint tests/*.shtick   # also show shellcheck findings per cell (they don't fail the run)
+:sh test tests/*.test.sh          # every cell and check
+:sh test -q tests/*.test.sh       # only failures and the summary
+:sh test --shell dash t.test.sh   # against another shell
+:sh test --lint tests/*.test.sh   # also show shellcheck findings per cell (they don't fail the run)
 ```
 
-The file format is described in the [configuration guide](configuration.md#test-files). It's still a shell script: `bash build.shtick` runs the code and ignores the checks.
+The file format is described in the [configuration guide](configuration.md#test-files). It's still a shell script: `bash build.test.sh` runs the code and ignores the checks.
 
 ## Saving your work
 

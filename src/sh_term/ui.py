@@ -1,4 +1,4 @@
-"""The interactive prompt, in querky's style: a ruled input, a one-line footer and `?` for shortcuts."""
+"""The interactive prompt, in :sql's style: a ruled input, a one-line footer and `?` for shortcuts."""
 
 from __future__ import annotations
 
@@ -57,14 +57,14 @@ from prompt_toolkit.widgets import SearchToolbar
 from pygments.lexers.shell import BashLexer
 from rich.text import Text
 
-from shtick import __version__, lint
-from shtick.banner import wordmark
-from shtick.completer import FlagHinter, ShtickCompleter
-from shtick.history import PromptHistory
-from shtick.output import format_duration
-from shtick.paths import fit_path, short_path
-from shtick.shell import Shell
-from shtick.syntax import has_prompts, is_complete, strip_prompts
+from sh_term import __version__, lint
+from sh_term.banner import wordmark
+from sh_term.completer import FlagHinter, ShTermCompleter
+from sh_term.history import PromptHistory
+from sh_term.output import format_duration
+from sh_term.paths import fit_path, short_path
+from sh_term.shell import Shell
+from sh_term.syntax import has_prompts, is_complete, strip_prompts
 
 INDENT = "  "
 EXIT_WINDOW = 1.5  # seconds a first Ctrl+C on an empty prompt waits for the second
@@ -185,7 +185,7 @@ class Repl:
             name=DEFAULT_BUFFER,
             multiline=True,
             history=PromptHistory(shell.history),
-            completer=ThreadedCompleter(ShtickCompleter(shell)),
+            completer=ThreadedCompleter(ShTermCompleter(shell)),
             complete_while_typing=False,
             auto_suggest=AutoSuggestFromHistory(),
             enable_history_search=Condition(lambda: "\n" not in self.buffer.text),
@@ -519,12 +519,12 @@ class Repl:
         ui.print()
         width = ui.width
         if width >= 48:
-            for line in wordmark("$HTICK"):
+            for line in wordmark(":SH"):
                 ui.print(line, overflow="crop", no_wrap=True)
         else:
-            ui.print(Text("  $HTICK", style="shtick.accent.bold"))
+            ui.print(Text("  :SH", style="sh_term.accent.bold"))
         ui.print()
-        ui.print(Text(f"  v{__version__}", style="shtick.faint"))
+        ui.print(Text(f"  v{__version__}", style="sh_term.faint"))
         ui.print()
         s = shell.session
         rows = [("Shell", f"{s.label}  {s.path}"), ("Directory", short_path(s.cwd))]
@@ -534,7 +534,7 @@ class Repl:
         rows.append(("Theme", shell.theme.name))
         key_width = max(len(k) for k, _ in rows) + 2
         for key, value in rows:
-            ui.print(Text.assemble(("  " + key.ljust(key_width), "shtick.fg"), (value, "shtick.label")), overflow="ellipsis", no_wrap=True)
+            ui.print(Text.assemble(("  " + key.ljust(key_width), "sh_term.fg"), (value, "sh_term.label")), overflow="ellipsis", no_wrap=True)
         ui.print()
         for warning in warnings or []:
             shell.warn(warning)
@@ -584,5 +584,5 @@ class Repl:
                     break
         finally:
             self.shell.close()
-        self.shell.ui.print(Text("  goodbye ✓", style="shtick.faint"))
+        self.shell.ui.print(Text("  goodbye ✓", style="sh_term.faint"))
         return 0

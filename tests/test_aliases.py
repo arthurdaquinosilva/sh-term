@@ -2,10 +2,10 @@ import shutil
 
 import pytest
 
-from shtick import aliases
-from shtick.aliases import Alias
-from shtick.config import Settings
-from shtick.engine import Session
+from sh_term import aliases
+from sh_term.aliases import Alias
+from sh_term.config import Settings
+from sh_term.engine import Session
 
 BASHRC = """\
 echo "startup files may print things"
@@ -29,7 +29,7 @@ def home(tmp_path, monkeypatch):
 
 
 def shell_with(home, **settings):
-    from shtick.shell import Shell
+    from sh_term.shell import Shell
 
     return Shell(Settings(**settings), cwd=str(home))
 

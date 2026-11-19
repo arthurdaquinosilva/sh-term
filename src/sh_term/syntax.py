@@ -48,7 +48,7 @@ def parse_check(code: str, kind: str = "bash") -> tuple[bool, str]:
     shell = _checker(kind)
     if shell is None:
         return True, ""
-    fd, path = tempfile.mkstemp(prefix="shtick-check-", suffix=".sh")
+    fd, path = tempfile.mkstemp(prefix="sh-term-check-", suffix=".sh")
     try:
         with os.fdopen(fd, "w") as f:
             f.write(code if code.endswith("\n") else code + "\n")

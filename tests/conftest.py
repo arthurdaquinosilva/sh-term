@@ -3,8 +3,8 @@ import shutil
 
 import pytest
 
-from shtick.config import Settings
-from shtick.engine import Session
+from sh_term.config import Settings
+from sh_term.engine import Session
 
 
 def installed(*names):
@@ -32,11 +32,11 @@ def bash(tmp_path):
 
 
 def make_shell(tmp_path, monkeypatch, shell="bash"):
-    from shtick.shell import Shell
+    from sh_term.shell import Shell
 
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("COLUMNS", "100")
-    monkeypatch.setenv("SHTICK_TEST_VAR", "set")
+    monkeypatch.setenv("SH_TERM_TEST_VAR", "set")
     return Shell(Settings(shell=shell), profile=None, cwd=str(tmp_path))
 
 

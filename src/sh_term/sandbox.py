@@ -35,7 +35,7 @@ class Sandbox:
     def __init__(self, source: str, copy: bool = False):
         self.source = os.path.abspath(source)  # where the session was before
         self.copied = copy
-        self.root = Path(tempfile.mkdtemp(prefix="shtick-sandbox-")).resolve()
+        self.root = Path(tempfile.mkdtemp(prefix="sh-term-sandbox-")).resolve()
         if copy:
             shutil.copytree(self.source, self.root, symlinks=True, dirs_exist_ok=True)
 

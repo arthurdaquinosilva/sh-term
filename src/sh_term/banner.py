@@ -6,12 +6,9 @@ from rich.text import Text
 
 # 5×7 bitmap glyphs. Rendered with ▀ ▄ █, every terminal cell holds two square-ish pixels.
 GLYPHS: dict[str, tuple[str, ...]] = {
-    "$": ("..#..", ".####", "#.#..", ".###.", "..#.#", "####.", "..#.."),  # the shell prompt's $ in place of the S
+    ":": ("...", ".##", ".##", "...", "...", ".##", ".##"),
+    "S": (".####", "#....", "#....", ".###.", "....#", "....#", "####."),
     "H": ("#...#", "#...#", "#...#", "#####", "#...#", "#...#", "#...#"),
-    "T": ("#####", "..#..", "..#..", "..#..", "..#..", "..#..", "..#.."),
-    "I": ("#####", "..#..", "..#..", "..#..", "..#..", "..#..", "#####"),
-    "C": (".####", "#....", "#....", "#....", "#....", "#....", ".####"),
-    "K": ("#...#", "#..#.", "#.#..", "##...", "#.#..", "#..#.", "#...#"),
 }
 _HALF = {(True, True): "█", (True, False): "▀", (False, True): "▄", (False, False): " "}
 
@@ -36,6 +33,6 @@ def pixel_rows(word: str, spacing: int = 1) -> list[str]:
     return lines
 
 
-def wordmark(word: str = "$HTICK", indent: int = 2) -> list[Text]:
+def wordmark(word: str = ":SH", indent: int = 2) -> list[Text]:
     """The wordmark in the accent colour."""
-    return [Text(" " * indent) + Text(row, style="shtick.accent.bold") for row in pixel_rows(word)]
+    return [Text(" " * indent) + Text(row, style="sh_term.accent.bold") for row in pixel_rows(word)]

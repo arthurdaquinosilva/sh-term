@@ -14,13 +14,13 @@ from rich.panel import Panel
 from rich.table import Table
 from rich.text import Text
 
-from shtick.config import Settings, setting_names
-from shtick.engine import ShellNotFound, available_shells
-from shtick.magics import MAGICS, ORDER, MagicError, MagicSpec, magic, magic_docs, split_args, take_flags
-from shtick.theme import PALETTES
+from sh_term.config import Settings, setting_names
+from sh_term.engine import ShellNotFound, available_shells
+from sh_term.magics import MAGICS, ORDER, MagicError, MagicSpec, magic, magic_docs, split_args, take_flags
+from sh_term.theme import PALETTES
 
 if TYPE_CHECKING:
-    from shtick.shell import Shell
+    from sh_term.shell import Shell
 
 
 def flag(value: str, current: bool) -> bool:
@@ -35,7 +35,7 @@ def flag(value: str, current: bool) -> bool:
 
 
 def state(on: bool) -> tuple[str, str]:
-    return ("on", "shtick.ok") if on else ("off", "shtick.muted")
+    return ("on", "sh_term.ok") if on else ("off", "sh_term.muted")
 
 
 KEYS = [
@@ -54,41 +54,41 @@ KEYS = [
 def help_panel() -> RenderableType:
     def grid(rows: list[tuple[str, str]]) -> Table:
         g = Table.grid(padding=(0, 2))
-        g.add_column(style="shtick.accent.bold", no_wrap=True)
-        g.add_column(style="shtick.muted")
+        g.add_column(style="sh_term.accent.bold", no_wrap=True)
+        g.add_column(style="sh_term.muted")
         for k, v in rows:
             g.add_row(Text(k), Text(v))  # plain text: [args] isn't markup
         return g
 
     def section(title: str, body: RenderableType) -> RenderableType:
-        return Group(Text(title, style="shtick.fg.bold"), Padding(body, (0, 0, 1, 2)))
+        return Group(Text(title, style="sh_term.fg.bold"), Padding(body, (0, 0, 1, 2)))
 
     docs = magic_docs()
     parts = [section("keys", grid(KEYS))]
     for category in sorted(docs, key=lambda c: ORDER.index(c) if c in ORDER else len(ORDER)):
         parts.append(section(category, grid(sorted(docs[category].items()))))
-    parts.append(Text("%help name shows details for one command", style="shtick.faint"))
+    parts.append(Text("%help name shows details for one command", style="sh_term.faint"))
     return Panel(
         Group(*parts),
-        title=Text.assemble(("✓ ", "shtick.accent"), ("shtick", "shtick.fg.bold"), (" help", "shtick.muted")),
+        title=Text.assemble(("✓ ", "sh_term.accent"), (":sh", "sh_term.fg.bold"), (" help", "sh_term.muted")),
         title_align="left",
-        border_style="shtick.border",
+        border_style="sh_term.border",
         box=box.ROUNDED,
         padding=(1, 2),
     )
 
 
 def command_help(spec: MagicSpec) -> RenderableType:
-    body: list[RenderableType] = [Text(spec.doc, style="shtick.fg")]
+    body: list[RenderableType] = [Text(spec.doc, style="sh_term.fg")]
     if spec.usage:
-        body += [Text(""), Text(spec.usage, style="shtick.muted")]
+        body += [Text(""), Text(spec.usage, style="sh_term.muted")]
     if spec.aliases:
-        body += [Text(""), Text("also: " + ", ".join("%" + a for a in spec.aliases), style="shtick.faint")]
+        body += [Text(""), Text("also: " + ", ".join("%" + a for a in spec.aliases), style="sh_term.faint")]
     return Panel(
         Group(*body),
-        title=Text.assemble(("✓ ", "shtick.accent"), ("%" + spec.name, "shtick.fg.bold")),
+        title=Text.assemble(("✓ ", "sh_term.accent"), ("%" + spec.name, "sh_term.fg.bold")),
         title_align="left",
-        border_style="shtick.border",
+        border_style="sh_term.border",
         box=box.ROUNDED,
         padding=(0, 1),
     )
@@ -113,18 +113,18 @@ def m_theme(shell: Shell, args: str):
         for n, p in PALETTES.items():
             mark = "●" if n == shell.theme.name else "○"
             swatch = Text.assemble(*[("██", c) for c in (p.accent, p.accent2, p.keyword, p.string, p.builtin, p.number)])
-            shell.print(Text.assemble((f"{mark} ", p.accent), (f"{n:<10}", "shtick.fg.bold"), swatch))
+            shell.print(Text.assemble((f"{mark} ", p.accent), (f"{n:<10}", "sh_term.fg.bold"), swatch))
         return
     try:
         shell.set_setting("theme", name)
     except ValueError as e:
         raise MagicError(str(e)) from None
-    shell.print(Text.assemble(("theme → ", "shtick.muted"), (name, "shtick.accent.bold")))
+    shell.print(Text.assemble(("theme → ", "sh_term.muted"), (name, "sh_term.accent.bold")))
 
 
 def save(shell: Shell, name: str) -> None:
-    from shtick.config import save_setting
-    from shtick.paths import short_path
+    from sh_term.config import save_setting
+    from sh_term.paths import short_path
 
     if shell.profile is None:
         raise MagicError("no profile to save to")
@@ -132,7 +132,7 @@ def save(shell: Shell, name: str) -> None:
         save_setting(shell.profile, name, getattr(shell.settings, name))
     except OSError as e:
         raise MagicError(f"can't write {shell.profile.config_file}: {e.strerror or e}") from None
-    shell.print(Text(f"saved in {short_path(shell.profile.config_file)}", style="shtick.faint"))
+    shell.print(Text(f"saved in {short_path(shell.profile.config_file)}", style="sh_term.faint"))
 
 
 @magic("config", doc="show or change settings: %config · %config name · %config name=value [--save]",
@@ -143,29 +143,29 @@ def m_config(shell: Shell, args: str):
     flags = bool(flag_re.search(args))
     a = flag_re.sub(" ", args).strip()
     if not a:
-        table = Table(box=box.SIMPLE_HEAD, border_style="shtick.border", header_style="shtick.accent.bold", show_edge=False, pad_edge=False)
-        table.add_column("setting", style="shtick.fg.bold", no_wrap=True)
-        table.add_column("value", style="shtick.string")
+        table = Table(box=box.SIMPLE_HEAD, border_style="sh_term.border", header_style="sh_term.accent.bold", show_edge=False, pad_edge=False)
+        table.add_column("setting", style="sh_term.fg.bold", no_wrap=True)
+        table.add_column("value", style="sh_term.string")
         for f in fields(Settings):
             table.add_row(f.name, repr(getattr(shell.settings, f.name)))
         shell.print(table)
         if shell.profile:
-            from shtick.paths import short_path
+            from sh_term.paths import short_path
 
-            shell.print(Text(f"saved defaults live in {short_path(shell.profile.config_file)}", style="shtick.faint"))
+            shell.print(Text(f"saved defaults live in {short_path(shell.profile.config_file)}", style="sh_term.faint"))
         return
     key, eq, value = a.partition("=")
     key = key.strip()
     if key not in setting_names():
         raise MagicError(f"unknown setting {key!r} — see %config")
     if not eq:
-        shell.print(Text.assemble((key, "shtick.fg.bold"), (" = ", "shtick.faint"), (repr(getattr(shell.settings, key)), "shtick.string")))
+        shell.print(Text.assemble((key, "sh_term.fg.bold"), (" = ", "sh_term.faint"), (repr(getattr(shell.settings, key)), "sh_term.string")))
         return
     try:
         shell.set_setting(key, value.strip())
     except ValueError as e:
         raise MagicError(str(e)) from None
-    shell.print(Text.assemble((key, "shtick.fg.bold"), (" = ", "shtick.faint"), (repr(getattr(shell.settings, key)), "shtick.string")))
+    shell.print(Text.assemble((key, "sh_term.fg.bold"), (" = ", "sh_term.faint"), (repr(getattr(shell.settings, key)), "sh_term.string")))
     if flags:
         save(shell, key)
 
@@ -176,29 +176,29 @@ def m_shell(shell: Shell, args: str):
     name = args.strip()
     s = shell.session
     if not name:
-        shell.print(Text.assemble(("shell ", "shtick.muted"), (s.label, "shtick.accent.bold"), (f"  {s.path}", "shtick.faint")))
+        shell.print(Text.assemble(("shell ", "sh_term.muted"), (s.label, "sh_term.accent.bold"), (f"  {s.path}", "sh_term.faint")))
         others = [n for n in available_shells()]
-        shell.print(Text("installed: " + ", ".join(others), style="shtick.faint"))
+        shell.print(Text("installed: " + ", ".join(others), style="sh_term.faint"))
         return
     try:
         shell.switch_shell(name)
     except ShellNotFound as e:
         raise MagicError(str(e)) from None
-    shell.print(Text.assemble(("shell → ", "shtick.muted"), (shell.session.label, "shtick.accent.bold"), (f"  {shell.session.path}", "shtick.faint")))
-    shell.print(Text("fresh session: earlier variables and functions are gone", style="shtick.faint"))
+    shell.print(Text.assemble(("shell → ", "sh_term.muted"), (shell.session.label, "sh_term.accent.bold"), (f"  {shell.session.path}", "sh_term.faint")))
+    shell.print(Text("fresh session: earlier variables and functions are gone", style="sh_term.faint"))
 
 
 @magic("restart", doc="restart the shell session (clears variables, functions, options)")
 def m_restart(shell: Shell, args: str):
     shell.restart()
-    shell.print(Text.assemble(("session restarted · ", "shtick.muted"), (shell.session.label, "shtick.accent.bold")))
+    shell.print(Text.assemble(("session restarted · ", "sh_term.muted"), (shell.session.label, "sh_term.accent.bold")))
 
 
 @magic("tty", doc="run cells attached to a terminal (merges stdout and stderr): %tty on|off",
        usage="For programs that check [ -t 1 ] or only print colors on a terminal. stderr is merged into stdout.")
 def m_tty(shell: Shell, args: str):
     shell.set_setting("tty", flag(args, shell.settings.tty))
-    shell.print(Text.assemble(("tty mode ", "shtick.muted"), state(shell.settings.tty)))
+    shell.print(Text.assemble(("tty mode ", "sh_term.muted"), state(shell.settings.tty)))
 
 
 @magic("clear", "cls", doc="clear the screen")
@@ -210,20 +210,20 @@ def m_clear(shell: Shell, args: str):
 @magic("editmode", "vi", "emacs", doc="switch key bindings: %vi · %emacs · %editmode vi|emacs [--save]",
        usage="vi: Esc for normal mode (the footer's -- INSERT -- goes away, as in vim), Enter runs from normal mode,\n"
              "v opens the cell in $EDITOR, / searches history, j/k move through history.\n"
-             "--save keeps the choice in config.toml; shtick --vi starts in vi mode once.")
+             "--save keeps the choice in config.toml; :sh --vi starts in vi mode once.")
 def m_editmode(shell: Shell, args: str):
     flags, words = take_flags(split_args(args), "--save", "-s")
     mode = words[0].lower() if words else shell.current_command
     if mode not in ("vi", "emacs"):
         raise MagicError("editmode must be vi or emacs")
     shell.settings.editing_mode = mode
-    shell.print(Text.assemble(("editing mode → ", "shtick.muted"), (mode, "shtick.accent.bold")))
+    shell.print(Text.assemble(("editing mode → ", "sh_term.muted"), (mode, "sh_term.accent.bold")))
     if flags:
         save(shell, "editing_mode")
     elif shell.profile is not None:
-        shell.print(Text(f"for this session · %{mode} --save keeps it", style="shtick.faint"))
+        shell.print(Text(f"for this session · %{mode} --save keeps it", style="sh_term.faint"))
 
 
-@magic("exit", "quit", doc="leave shtick")
+@magic("exit", "quit", doc="leave :sh")
 def m_exit(shell: Shell, args: str):
     shell.exit_requested = True

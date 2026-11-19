@@ -6,7 +6,7 @@ import os
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from shtick.syntax import Chunk, split_script
+from sh_term.syntax import Chunk, split_script
 
 
 @dataclass

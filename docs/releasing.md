@@ -1,10 +1,10 @@
 # Releasing
 
-shtick is published only on GitHub — it isn't on PyPI. People install it with `install.sh`, which downloads the source archive of a branch or tag from GitHub and pip-installs it into its own virtual environment.
+:sh is published only on GitHub — it isn't on PyPI. People install it with `install.sh`, which downloads the source archive of a branch or tag from GitHub and pip-installs it into its own virtual environment.
 
 ## Cutting a release
 
-1. Bump `version` in `pyproject.toml` and `__version__` in `src/shtick/__init__.py`.
+1. Bump `version` in `pyproject.toml` and `__version__` in `src/sh_term/__init__.py`.
 2. Add the changes to `CHANGELOG.md`.
 3. Check that it builds:
 
@@ -21,7 +21,7 @@ shtick is published only on GitHub — it isn't on PyPI. People install it with 
 The tag is what `install.sh` installs when asked for that version:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/arthurdaquinosilva/shtick/main/install.sh | sh -s -- 0.1.0
+curl -fsSL https://raw.githubusercontent.com/arthurdaquinosilva/sh-term/main/install.sh | sh -s -- 0.1.0
 ```
 
 `install.sh` is served straight from `main` and installs `main` unless given a version, so it needs no change per release. Keep it working on plain `sh` (dash): the tests run it through shellcheck, and the `install-script` CI job installs the checkout with it on Linux and macOS.

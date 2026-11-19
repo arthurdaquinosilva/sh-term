@@ -10,11 +10,11 @@ from typing import TYPE_CHECKING
 from rich.syntax import Syntax
 from rich.text import Text
 
-from shtick.history import Entry
-from shtick.magics import MagicError, magic, parse_args, split_args, take_flags
+from sh_term.history import Entry
+from sh_term.magics import MagicError, magic, parse_args, split_args, take_flags
 
 if TYPE_CHECKING:
-    from shtick.shell import Shell
+    from sh_term.shell import Shell
 
 
 RANGES = "ranges: 4 · 4-6 · 4:7 (exclusive) · ~1/ (previous session) · ~1/2-3 · several separated by spaces"
@@ -46,19 +46,19 @@ def m_history(shell: Shell, args: str):
         entries = shell.history.get_range(shell.history.session)
     statuses = shell.history.statuses() if opts.get("s") else {}
     if not entries:
-        shell.print(Text("no history yet", style="shtick.muted"))
+        shell.print(Text("no history yet", style="sh_term.muted"))
         return
     for e in entries:
         label = f"{e.line}" if e.session == shell.history.session else f"{e.session}/{e.line}"
         prefix = Text()
         if opts.get("n") or opts.get("g") is not None or rest:
-            prefix.append(f"{label:>6}  ", style="shtick.faint")
+            prefix.append(f"{label:>6}  ", style="sh_term.faint")
         if statuses and e.session == shell.history.session and e.line in statuses:
             st = statuses[e.line]
-            prefix.append("✓ " if st == 0 else "✗ ", style="shtick.ok" if st == 0 else "shtick.err")
+            prefix.append("✓ " if st == 0 else "✗ ", style="sh_term.ok" if st == 0 else "sh_term.err")
         shell.print(prefix, end="")
         if _is_command(e.source):
-            shell.print(Text(e.source, style="shtick.accent"))
+            shell.print(Text(e.source, style="sh_term.accent"))
         else:
             shell.print(Syntax(e.source, "bash", theme=shell.theme.syntax_theme, background_color="default", word_wrap=True))
 
@@ -95,13 +95,13 @@ def m_save(shell: Shell, args: str):
         path.chmod(path.stat().st_mode | 0o111)
     except OSError as e:
         raise MagicError(f"can't write {target}: {e.strerror or e}") from None
-    from shtick.paths import short_path
+    from sh_term.paths import short_path
 
-    shell.print(Text.assemble(("✓ ", "shtick.ok"), (f"wrote {target}", "shtick.fg"), (f"  {len(entries)} cells · {shebang}", "shtick.muted")))
-    shell.print(Text(f"in {short_path(path.parent)}", style="shtick.faint"), no_wrap=True, overflow="ellipsis")
+    shell.print(Text.assemble(("✓ ", "sh_term.ok"), (f"wrote {target}", "sh_term.fg"), (f"  {len(entries)} cells · {shebang}", "sh_term.muted")))
+    shell.print(Text(f"in {short_path(path.parent)}", style="sh_term.faint"), no_wrap=True, overflow="ellipsis")
     if skipped and not include_failed:
         shell.print(Text(f"left out {len(skipped)} failed cells: " + ", ".join(str(e.line) for e in skipped) + " — -a includes them",
-                         style="shtick.faint"))
+                         style="sh_term.faint"))
 
 
 def _shebang(shell: Shell) -> str:
@@ -136,4 +136,4 @@ def m_recall(shell: Shell, args: str):
     if not entries:
         raise MagicError("nothing to recall")
     shell.next_input = "\n".join(e.source for e in entries)
-    shell.print(Text("in the input — edit and press enter", style="shtick.faint"))
+    shell.print(Text("in the input — edit and press enter", style="sh_term.faint"))
